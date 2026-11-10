@@ -19,8 +19,8 @@ const DADOS = {
     slogan: "Brownies & Co.",
     cidade: "Tupã-SP",
     instagram: "_brownily",
-    // Quando a logo PNG estiver na pasta, troque null por "logo.png".
-    logo: null,                                                      // CONFIRMAR (aguardando a logo)
+    // Logo (PNG com fundo transparente). Para ficar só com o nome escrito, troque por null.
+    logo: "logo.png",
   },
 
   /* ---------- Endereço do site (usado no QR Code) ---------- */

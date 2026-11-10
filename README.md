@@ -46,4 +46,4 @@ Para só gerar os materiais, sem publicar: `node ferramentas/materiais.js`.
 - Esgotado: `esgotado: ["M"]` (só o M), `esgotado: ["P", "M"]` (sabor todo) ou `esgotado: []` (disponível).
 - Selo da capa: `selo: { ativo: false }` desliga.
 - Sabor sem foto aparece como cartão com o nome. Quando houver foto, é só trocar `foto: null` pelo caminho dela.
-- Logo: quando o arquivo PNG estiver na pasta, `marca.logo` passa a ser `"logo.png"` e ela entra no site, nas imagens e no centro do QR Code.
+- Logo: `logo.png` (fundo transparente) aparece no site, nas imagens e no centro do QR Code. Os arquivos originais ficam em `logo-original/`. Para trocar a logo, peça ao Claude (ele roda `node ferramentas/preparar-logo.js` com o novo arquivo).

@@ -29,7 +29,7 @@ const marca = (cls = "") => temLogo()
 const CSS = `
 @font-face{font-family:"Lilita One";src:url("../fonts/lilita-one.woff2") format("woff2");font-weight:400}
 @font-face{font-family:"Nunito";src:url("../fonts/nunito.woff2") format("woff2");font-weight:200 1000}
-:root{--choc:#2b1711;--choc2:#3d2219;--lilac:#cfb7e6;--soft:#f1e9f8;--purple:#6a3d9a;--ink2:#4b2775;--paper:#fbf8f4;--line:#e6dcef;--muted:#6e5a54;--ondark:#fbf3ea;--ondark2:#d7c4bb;--fd:"Lilita One","Arial Rounded MT Bold",sans-serif;--fb:"Nunito","Segoe UI",sans-serif}
+:root{--choc:#2b1711;--choc2:#3d2219;--lilac:#c7aecb;--soft:#f3ebf5;--purple:#915daf;--ink2:#4a2a63;--paper:#fbf8f4;--line:#e8dded;--muted:#6e5a54;--ondark:#fbf3ea;--ondark2:#d7c4bb;--fd:"Lilita One","Arial Rounded MT Bold",sans-serif;--fb:"Nunito","Segoe UI",sans-serif}
 @page{size:1080px 1920px;margin:0}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:#777}
@@ -39,7 +39,7 @@ body{font-family:var(--fb);font-weight:600;color:var(--choc)}
 .dots::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;background-image:radial-gradient(rgba(207,183,230,.18) 2px,transparent 3px);background-size:40px 40px}
 .wordmark{font-family:var(--fd);font-size:64px;line-height:1;color:var(--ondark)}.wordmark b{font-weight:400;color:var(--lilac)}
 .wordmark.sm{font-size:48px}
-.logo{height:84px;width:auto}.logo.sm{height:64px}
+.logo{height:120px;width:auto;display:block}.logo.sm{height:84px}
 .slogan{font-weight:900;font-size:24px;letter-spacing:.16em;text-transform:uppercase;color:var(--ondark2)}
 .dark{background:var(--choc);color:var(--ondark)}
 .light{background:var(--paper)}

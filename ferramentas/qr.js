@@ -9,7 +9,13 @@ const { abrirNavegador } = require("./navegador.js");
 const RAIZ = path.join(__dirname, "..");
 const PASTA = path.join(RAIZ, "materiais");
 
-const COR = { fundo: "#fbf8f4", modulo: "#2b1711", olho: "#4b2775", olhoMiolo: "#6a3d9a", lilas: "#cfb7e6", choc: "#2b1711" };
+const COR = { fundo: "#fbf8f4", modulo: "#2b1711", olho: "#4a2a63", olhoMiolo: "#915daf", lilas: "#c7aecb", choc: "#2b1711" };
+
+// lê largura e altura de um PNG direto do cabeçalho do arquivo
+function tamanhoPng(arq) {
+  const b = fs.readFileSync(arq);
+  return { w: b.readUInt32BE(16), h: b.readUInt32BE(20) };
+}
 
 function montarSvg(url) {
   const qr = qrcode(0, "H");
@@ -19,9 +25,22 @@ function montarSvg(url) {
   const quiet = 3, cel = 20;
   const lado = (n + quiet * 2) * cel;
   const meio = lado / 2;
-  // O "selo" central ocupa ~21% da largura (cerca de 4% da área): seguro com correção H.
-  const raioSelo = lado * 0.105;
-  const raioLimpo = raioSelo + cel * 0.9;
+
+  const logoRel = DADOS.marca.logo;
+  const logoArq = logoRel && path.join(RAIZ, logoRel);
+  const temLogo = !!(logoArq && fs.existsSync(logoArq));
+
+  // Área reservada no centro (retângulo largo para a logo, ou círculo para o selo provisório)
+  let bw, bh;
+  if (temLogo) {
+    const t = tamanhoPng(logoArq);
+    bw = lado * 0.32;
+    bh = bw * t.h / t.w + cel * 1.8;
+  } else {
+    bw = bh = lado * 0.21;
+  }
+  const folga = cel * 0.9;
+  const dentro = (cx, cy) => Math.abs(cx - meio) < bw / 2 + folga && Math.abs(cy - meio) < bh / 2 + folga;
 
   const emOlho = (r, c) => (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
   let mods = "";
@@ -29,8 +48,7 @@ function montarSvg(url) {
     for (let c = 0; c < n; c++) {
       if (!qr.isDark(r, c) || emOlho(r, c)) continue;
       const x = (c + quiet) * cel, y = (r + quiet) * cel;
-      const dx = x + cel / 2 - meio, dy = y + cel / 2 - meio;
-      if (Math.hypot(dx, dy) < raioLimpo) continue;
+      if (dentro(x + cel / 2, y + cel / 2)) continue;
       mods += `<rect x="${x + 0.5}" y="${y + 0.5}" width="${cel - 1}" height="${cel - 1}" rx="${cel * 0.22}"/>`;
     }
   }
@@ -40,20 +58,15 @@ function montarSvg(url) {
            `<rect x="${x + cel * 2}" y="${y + cel * 2}" width="${cel * 3}" height="${cel * 3}" rx="${cel * 0.6}" fill="${COR.olho}"/>`;
   };
 
-  // Selo do centro: a logo (se existir) ou um brownie desenhado.
   let selo;
-  const logoRel = DADOS.marca.logo;
-  const logoArq = logoRel && path.join(RAIZ, logoRel);
-  if (logoArq && fs.existsSync(logoArq)) {
+  if (temLogo) {
     const b64 = fs.readFileSync(logoArq).toString("base64");
     const mime = /\.svg$/i.test(logoArq) ? "image/svg+xml" : "image/png";
-    const d = raioSelo * 2 * 0.86;
-    selo = `<circle cx="${meio}" cy="${meio}" r="${raioSelo}" fill="${COR.fundo}"/>` +
-           `<clipPath id="cl"><circle cx="${meio}" cy="${meio}" r="${raioSelo * 0.9}"/></clipPath>` +
-           `<image href="data:${mime};base64,${b64}" x="${meio - d / 2}" y="${meio - d / 2}" width="${d}" height="${d}" preserveAspectRatio="xMidYMid meet" clip-path="url(#cl)"/>` +
-           `<circle cx="${meio}" cy="${meio}" r="${raioSelo * 0.9}" fill="none" stroke="${COR.lilas}" stroke-width="${cel * 0.35}"/>`;
+    const pad = cel * 0.8;
+    selo = `<rect x="${meio - bw / 2}" y="${meio - bh / 2}" width="${bw}" height="${bh}" rx="${cel * 1.4}" fill="${COR.fundo}" stroke="${COR.lilas}" stroke-width="${cel * 0.35}"/>` +
+           `<image href="data:${mime};base64,${b64}" x="${meio - bw / 2 + pad}" y="${meio - bh / 2 + pad}" width="${bw - pad * 2}" height="${bh - pad * 2}" preserveAspectRatio="xMidYMid meet"/>`;
   } else {
-    const s = raioSelo;
+    const s = bw / 2;
     selo = `<circle cx="${meio}" cy="${meio}" r="${s}" fill="${COR.fundo}"/>` +
            `<circle cx="${meio}" cy="${meio}" r="${s * 0.9}" fill="${COR.lilas}"/>` +
            `<rect x="${meio - s * 0.48}" y="${meio - s * 0.42}" width="${s * 0.96}" height="${s * 0.84}" rx="${s * 0.2}" fill="${COR.choc}"/>` +
@@ -79,24 +92,27 @@ async function gerarQR() {
   await p.setContent(`<body style="margin:0;background:#fbf8f4"><div style="width:1200px;height:1200px">${svg.replace(/width="\d+" height="\d+"/, 'width="1200" height="1200"')}</div></body>`);
   await p.screenshot({ path: path.join(PASTA, "qr-brownily.png"), clip: { x: 0, y: 0, width: 1200, height: 1200 } });
 
-  // Conferência: lê o QR do PNG gerado e compara com o endereço.
+  // Conferência: lê o QR do PNG gerado (em tamanho grande e em tamanho pequeno, como num celular) e compara com o endereço.
   const jsqr = fs.readFileSync(require.resolve("jsqr/dist/jsQR.js"), "utf8");
   const png64 = fs.readFileSync(path.join(PASTA, "qr-brownily.png")).toString("base64");
-  const lido = await p.evaluate(async ({ jsqr, png64 }) => {
+  const lidos = await p.evaluate(async ({ jsqr, png64 }) => {
     (0, eval)(jsqr);
     const img = new Image();
     await new Promise(r => { img.onload = r; img.src = "data:image/png;base64," + png64; });
-    const c = document.createElement("canvas");
-    c.width = img.width; c.height = img.height;
-    const x = c.getContext("2d"); x.drawImage(img, 0, 0);
-    const d = x.getImageData(0, 0, c.width, c.height);
-    const r = window.jsQR(d.data, d.width, d.height);
-    return r ? r.data : null;
+    const ler = tam => {
+      const c = document.createElement("canvas");
+      c.width = c.height = tam;
+      const x = c.getContext("2d"); x.imageSmoothingQuality = "high"; x.drawImage(img, 0, 0, tam, tam);
+      const d = x.getImageData(0, 0, tam, tam);
+      const r = window.jsQR(d.data, d.width, d.height);
+      return r ? r.data : null;
+    };
+    return { grande: ler(1200), medio: ler(500), pequeno: ler(300) };
   }, { jsqr, png64 });
   await b.close();
 
-  const ok = lido === url;
-  console.log(`QR Code: ${ok ? "OK (leitura confere)" : "ATENÇÃO: não conseguiu ler de volta"} -> ${url}`);
+  const ok = Object.values(lidos).every(v => v === url);
+  console.log(`QR Code: ${ok ? "OK (leitura confere em 3 tamanhos)" : "ATENÇÃO: falhou em algum tamanho " + JSON.stringify(lidos)} -> ${url}`);
   if (!ok) throw new Error("O QR Code gerado não foi lido corretamente.");
 }
 

@@ -123,7 +123,10 @@
 
   function footer() {
     var n = D.marca.nome.toLowerCase();
-    return "<footer><b>" + esc(n.slice(0, 4)) + "<em>" + esc(n.slice(4)) + "</em></b><br>" + esc(D.marca.slogan) + " &middot; " + esc(D.marca.cidade) + "</footer>";
+    var marca = D.marca.logo
+      ? '<img class="logo" src="' + esc(D.marca.logo) + '" alt="' + esc(D.marca.nome) + '" loading="lazy">'
+      : "<b>" + esc(n.slice(0, 4)) + "<em>" + esc(n.slice(4)) + "</em></b><br>";
+    return "<footer>" + marca + esc(D.marca.slogan) + " &middot; " + esc(D.marca.cidade) + "</footer>";
   }
 
   function bar() {
