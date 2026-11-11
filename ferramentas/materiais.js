@@ -17,7 +17,7 @@ const brl = v => { const n = Number(v); return "R$&nbsp;" + (n % 1 === 0 ? n : n
 const fora = (x, k) => (x.esgotado || []).includes(k);
 // linhas de um item: P/M (tamanhos) ou "linhas" próprias (sabores / unidade única)
 const linhasDe = x => x.linhas
-  ? x.linhas.map(l => ({ key: l.id, rotulo: l.rotulo || "", preco: l.preco, badge: "" }))
+  ? x.linhas.map(l => ({ key: l.id, rotulo: l.rotulo || "", desc: l.descricao || "", preco: l.preco, badge: "" }))
   : TAM.map(s => ({ key: s, rotulo: "", preco: x.preco[s], badge: s }));
 const tudoFora = x => { const l = linhasDe(x); return l.length > 0 && l.every(r => fora(x, r.key)); };
 const secoes = () => D.colecoes.filter(c => c.ativa !== false && c.grupos.some(g => g.sabores.length));
@@ -76,7 +76,7 @@ h1,h2,h3{font-family:var(--fd);font-weight:400;margin:0;line-height:1}
 .lista{flex:1;padding:30px 70px 0;display:flex;flex-direction:column;gap:22px}
 .pill{align-self:flex-start;background:linear-gradient(120deg,var(--purple),var(--ink2));color:#fff;font-family:var(--fd);font-size:36px;padding:10px 34px 12px;border-radius:999px}
 .grupo{font-size:54px;color:var(--choc);margin:2px 0 -6px}
-.item{display:flex;min-height:380px;max-height:540px;flex:1 1 380px;background:#fff;border:3px solid var(--line);border-radius:36px;overflow:hidden;position:relative}
+.item{display:flex;min-height:380px;max-height:540px;flex:1 0 auto;background:#fff;border:3px solid var(--line);border-radius:36px;overflow:hidden;position:relative}
 .item .m{position:relative;width:304px;align-self:stretch;flex:none;background:var(--choc2)}
 .item .m img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .item .tag{position:absolute;top:18px;left:18px;background:var(--purple);color:#fff;font-weight:900;font-size:22px;letter-spacing:.12em;text-transform:uppercase;padding:8px 18px;border-radius:999px;z-index:2}
@@ -96,6 +96,12 @@ h1,h2,h3{font-family:var(--fd);font-weight:400;margin:0;line-height:1}
 .pre .lb{font-weight:800;font-size:28px;color:var(--choc);flex:1;min-width:0}
 .pre .lb + .v{margin-left:auto}
 .pre.off .lb{color:#9b8f94}
+.pre.desc{align-items:center;gap:24px}
+.pre .dl{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.pre .dl .lb{font-size:30px;line-height:1.1}
+.pre .dt{font-size:22px;line-height:1.25;color:var(--muted);font-weight:600}
+.pre .v.sem{font-family:var(--fb);font-weight:800;font-size:22px;color:var(--muted);text-align:right;max-width:170px;line-height:1.15;margin-left:auto}
+.pre.desc .e{margin-left:0}
 .item.out{background:#f1ebe3;border-color:#e3d9cb}
 .item.out .m img,.item.out .tile{filter:grayscale(1) opacity(.55)}
 .item.out h3,.item.out p{color:#9b8f94}
@@ -146,9 +152,14 @@ function paginaCapa() {
 }
 
 function linhaPreco(x, r) {
-  const esq = r.badge ? `<span class="z">${esc(r.badge)}</span>` : (r.rotulo ? `<span class="lb">${esc(r.rotulo)}</span>` : "");
   const off = fora(x, r.key);
-  return `<div class="pre${off ? " off" : ""}${r.badge ? "" : " var"}">${esq}<span class="v">${brl(r.preco)}</span>${off ? '<span class="e">Esgotado</span>' : ""}</div>`;
+  const sem = typeof r.preco !== "number";
+  const preco = sem ? '<span class="v sem">Valor sob consulta</span>' : `<span class="v">${brl(r.preco)}</span>`;
+  if (r.desc) {   // sabor com descrição ao lado: nome + texto à esquerda, preço à direita
+    return `<div class="pre desc${off ? " off" : ""}"><div class="dl"><span class="lb">${esc(r.rotulo)}</span><span class="dt">${esc(r.desc)}</span></div>${preco}${off ? '<span class="e">Esgotado</span>' : ""}</div>`;
+  }
+  const esq = r.badge ? `<span class="z">${esc(r.badge)}</span>` : (r.rotulo ? `<span class="lb">${esc(r.rotulo)}</span>` : "");
+  return `<div class="pre${off ? " off" : ""}${r.badge ? "" : " var"}">${esq}${preco}${off ? '<span class="e">Esgotado</span>' : ""}</div>`;
 }
 
 function item(x) {
@@ -168,9 +179,15 @@ function paginasCardapio() {
     const itens = [];
     c.grupos.forEach(g => g.sabores.forEach(x => itens.push({ c, g, x })));
     // reparte por igual entre as páginas (ex.: 5 itens = 3 + 2; 7 itens = 3 + 2 + 2)
-    const q = Math.ceil(itens.length / POR_PAGINA), base = Math.floor(itens.length / q), extra = itens.length % q;
-    let i = 0;
-    for (let p = 0; p < q; p++) { const n = base + (p < extra ? 1 : 0); paginas.push({ c, lista: itens.slice(i, i + n) }); i += n; }
+    // itens com muitas linhas (ex.: Sobremesa com 3 sabores) "pesam" mais; cada página aceita até ~3 itens normais
+    const peso = x => linhasDe(x).filter(r => r.desc).length >= 2 ? 1.5 : (linhasDe(x).length >= 4 ? 1.25 : 1);
+    const CAP = 3.2;
+    let atual = [], soma = 0;
+    itens.forEach(it => {
+      if (atual.length && soma + peso(it.x) > CAP) { paginas.push({ c, lista: atual }); atual = []; soma = 0; }
+      atual.push(it); soma += peso(it.x);
+    });
+    if (atual.length) paginas.push({ c, lista: atual });
   });
   const tams = `<div class="tams">${TAM.map(s => `<span><i>${s}</i>${esc(D.tamanhos[s])}</span>`).join("")}</div>`;
   return paginas.map(({ c: sec, lista }, n) => {
@@ -276,6 +293,9 @@ async function gerarMateriais() {
     const nome = await s.getAttribute("data-nome");
     if (nome === "compartilhar") { await s.screenshot({ path: path.join(PASTA, "compartilhar.jpg"), type: "jpeg", quality: 86 }); continue; }
     n++;
+    // aviso se o conteúdo de uma página não couber (evita item cortado nas imagens)
+    const estouro = await s.evaluate(el => { const l = el.querySelector(".lista"); return l ? l.scrollHeight - l.clientHeight : 0; });
+    if (estouro > 2) console.warn(`ATENÇÃO: a página "${nome}" ficou ${estouro}px maior que o espaço. Confira a imagem.`);
     const f = `story-${String(n).padStart(2, "0")}-${nome}.png`;
     await s.screenshot({ path: path.join(PASTA, f) });
     arquivos.push(f);

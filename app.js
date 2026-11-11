@@ -24,7 +24,7 @@
   function sizes() { return Object.keys(D.tamanhos); }
   // linhas de um item: P/M (tamanhos) ou as "linhas" próprias (sabores, unidade única...)
   function rowsOf(x) {
-    if (x.linhas) return x.linhas.map(function (l) { return { key: l.id, label: l.rotulo || "", price: l.preco, badge: "" }; });
+    if (x.linhas) return x.linhas.map(function (l) { return { key: l.id, label: l.rotulo || "", desc: l.descricao || "", price: l.preco, badge: "" }; });
     return sizes().map(function (s) { return { key: s, label: "", price: x.preco[s], badge: s }; });
   }
   function isOut(sabor, k) { return (sabor.esgotado || []).indexOf(k) !== -1; }
@@ -101,11 +101,18 @@
     var out = isOut(sabor, r.key);
     var nome = esc(sabor.nome) + (r.label ? " (" + esc(r.label) + ")" : r.badge ? " (" + esc(r.badge) + ")" : "");
     // com tamanho P/M: bolinha + preço; com sabor/unidade: nome do sabor (se tiver) e preço
+    var semPreco = typeof r.price !== "number";   // preço ainda não definido: "Valor sob consulta"
+    var precoHtml = semPreco ? '<span class="nop">Valor sob consulta</span>' : '<span class="pr">' + brlHtml(r.price) + "</span>";
     var esq = r.badge
-      ? '<span class="sz">' + esc(r.badge) + '</span><span class="pr">' + brlHtml(r.price) + "</span>"
-      : '<span class="vl">' + (r.label ? '<span class="lbl">' + esc(r.label) + "</span>" : "") + '<span class="pr">' + brlHtml(r.price) + "</span></span>";
-    var cls = "row" + (r.badge ? "" : " var") + (out ? " off" : "");
+      ? '<span class="sz">' + esc(r.badge) + "</span>" + precoHtml
+      : '<span class="vl">' + (r.label ? '<span class="lbl">' + esc(r.label) + "</span>" : "") +
+        (r.desc ? '<span class="rd">' + esc(r.desc) + "</span>" : "") + precoHtml + "</span>";
+    var cls = "row" + (r.badge ? "" : " var") + (r.desc ? " dsc" : "") + (out ? " off" : "");
     if (out) return '<div class="' + cls + '">' + esq + '<span class="soldout">Esgotado</span></div>';
+    if (semPreco) {
+      var msg = "Olá, " + D.marca.nome + "! Qual o valor de " + sabor.nome + (r.label ? " (" + r.label + ")" : "") + "?";
+      return '<div class="' + cls + '">' + esq + '<a class="ask" href="https://wa.me/' + D.contato.whatsapp + "?text=" + encodeURIComponent(msg) + '" target="_blank" rel="noopener">Perguntar</a></div>';
+    }
     return '<div class="' + cls + '">' + esq +
       '<div class="step" data-id="' + esc(sabor.id) + '" data-size="' + esc(r.key) + '">' +
       '<button type="button" class="b minus" aria-label="Tirar um ' + nome + '" disabled>&minus;</button>' +

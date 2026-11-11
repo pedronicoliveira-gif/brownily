@@ -21,7 +21,7 @@ function conferirDados() {
     ids.add(s.id);
     if (s.linhas) {
       if (!s.linhas.length && !s.consultar) erros.push(`${s.nome}: sem preço (use "linhas" ou consultar: true)`);
-      s.linhas.forEach(l => { if (typeof l.preco !== "number") erros.push(`${s.nome} (${l.rotulo || l.id}): preço inválido`); });
+      s.linhas.forEach(l => { if (l.preco !== null && typeof l.preco !== "number") erros.push(`${s.nome} (${l.rotulo || l.id}): preço inválido (use um número ou null)`); });
     } else if (!s.consultar) {
       Object.keys(DADOS.tamanhos).forEach(t => { if (typeof s.preco[t] !== "number") erros.push(`${s.nome}: falta o preço do tamanho ${t}`); });
     }
