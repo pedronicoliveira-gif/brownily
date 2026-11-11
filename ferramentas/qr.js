@@ -9,7 +9,7 @@ const { abrirNavegador } = require("./navegador.js");
 const RAIZ = path.join(__dirname, "..");
 const PASTA = path.join(RAIZ, "materiais");
 
-const COR = { fundo: "#fbf8f4", modulo: "#2b1711", olho: "#4a2a63", olhoMiolo: "#915daf", lilas: "#c7aecb", choc: "#2b1711" };
+const COR = { fundo: "#f6eee2", modulo: "#2b1711", olho: "#4a2a63", olhoMiolo: "#915daf", lilas: "#c7aecb", choc: "#2b1711" };
 
 // lê largura e altura de um PNG direto do cabeçalho do arquivo
 function tamanhoPng(arq) {
@@ -63,7 +63,7 @@ function montarSvg(url) {
     const b64 = fs.readFileSync(logoArq).toString("base64");
     const mime = /\.svg$/i.test(logoArq) ? "image/svg+xml" : "image/png";
     const pad = cel * 0.8;
-    selo = `<rect x="${meio - bw / 2}" y="${meio - bh / 2}" width="${bw}" height="${bh}" rx="${cel * 1.4}" fill="${COR.fundo}" stroke="${COR.lilas}" stroke-width="${cel * 0.35}"/>` +
+    selo = `<rect x="${meio - bw / 2}" y="${meio - bh / 2}" width="${bw}" height="${bh}" rx="${cel * 1.4}" fill="${COR.lilas}" stroke="${COR.olhoMiolo}" stroke-width="${cel * 0.4}"/>` +
            `<image href="data:${mime};base64,${b64}" x="${meio - bw / 2 + pad}" y="${meio - bh / 2 + pad}" width="${bw - pad * 2}" height="${bh - pad * 2}" preserveAspectRatio="xMidYMid meet"/>`;
   } else {
     const s = bw / 2;
@@ -89,7 +89,7 @@ async function gerarQR() {
 
   const b = await abrirNavegador();
   const p = await b.newPage({ viewport: { width: 1200, height: 1200 } });
-  await p.setContent(`<body style="margin:0;background:#fbf8f4"><div style="width:1200px;height:1200px">${svg.replace(/width="\d+" height="\d+"/, 'width="1200" height="1200"')}</div></body>`);
+  await p.setContent(`<body style="margin:0;background:${COR.fundo}"><div style="width:1200px;height:1200px">${svg.replace(/width="\d+" height="\d+"/, 'width="1200" height="1200"')}</div></body>`);
   await p.screenshot({ path: path.join(PASTA, "qr-brownily.png"), clip: { x: 0, y: 0, width: 1200, height: 1200 } });
 
   // Conferência: lê o QR do PNG gerado (em tamanho grande e em tamanho pequeno, como num celular) e compara com o endereço.

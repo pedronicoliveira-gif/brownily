@@ -16,12 +16,13 @@ function conferirDados() {
   const erros = [];
   if (/SEU-USUARIO/.test(DADOS.site.url)) erros.push("O endereço do site em dados.js (site.url) ainda é o provisório.");
   const ids = new Set();
-  DADOS.grupos.forEach(g => g.sabores.forEach(s => {
+  DADOS.colecoes.forEach(c => c.grupos.forEach(g => g.sabores.forEach(s => {
     if (ids.has(s.id)) erros.push(`Sabor repetido: ${s.id}`);
     ids.add(s.id);
     Object.keys(DADOS.tamanhos).forEach(t => { if (typeof s.preco[t] !== "number") erros.push(`${s.nome}: falta o preço do tamanho ${t}`); });
     if (s.foto && !fs.existsSync(path.join(RAIZ, s.foto))) erros.push(`${s.nome}: a foto ${s.foto} não existe`);
-  }));
+  })));
+  if (!DADOS.colecoes.some(c => c.ativa !== false && c.grupos.some(g => g.sabores.length))) erros.push("Nenhuma seção ativa com sabores.");
   if (!fs.existsSync(path.join(RAIZ, DADOS.capa.foto))) erros.push(`Foto da capa não existe: ${DADOS.capa.foto}`);
   if (erros.length) { console.error("\nPROBLEMAS NO dados.js:\n- " + erros.join("\n- ")); process.exit(1); }
 }

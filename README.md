@@ -41,6 +41,15 @@ Para só gerar os materiais, sem publicar: `node ferramentas/materiais.js`.
 | `ferramentas/` | Scripts que geram QR, imagens e PDF |
 | `atualizar.bat` | Regenera tudo e publica |
 
+## Seções do cardápio
+
+O cardápio é dividido em **seções**, cada uma separada no site e nas imagens:
+
+- `especial`: os especiais da época. Hoje é o "Especial de fim de ano". Para trocar o nome (ex.: Páscoa), mude o `titulo`; para tirar do ar, `ativa: false`.
+- `cardapio`: o cardápio de sempre. Fica escondido enquanto não tiver itens; quando tiver, aparece sozinho, separado do especial, com abas no topo do site.
+
+Para mover um produto de uma seção para outra, peça ao Claude.
+
 ## Regras rápidas
 
 - Esgotado: `esgotado: ["M"]` (só o M), `esgotado: ["P", "M"]` (sabor todo) ou `esgotado: []` (disponível).

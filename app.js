@@ -21,9 +21,17 @@
   function sizes() { return Object.keys(D.tamanhos); }
   function isOut(sabor, s) { return (sabor.esgotado || []).indexOf(s) !== -1; }
   function allOut(sabor) { return sizes().every(function (s) { return isOut(sabor, s); }); }
+  function mini(foto) { return foto.replace(/^fotos\//, "fotos/mini/").replace(/\.\w+$/, ".jpg"); }
+
+  // seções (colecoes) ativas que têm pelo menos um sabor
+  function secoes() {
+    return D.colecoes.filter(function (c) {
+      return c.ativa !== false && c.grupos.some(function (g) { return g.sabores.length; });
+    });
+  }
   function allSabores() {
     var r = [];
-    D.grupos.forEach(function (g) { g.sabores.forEach(function (x) { r.push(x); }); });
+    secoes().forEach(function (c) { c.grupos.forEach(function (g) { g.sabores.forEach(function (x) { r.push(x); }); }); });
     return r;
   }
   function minPrice() {
@@ -42,21 +50,20 @@
   var IG_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>';
 
   /* ---------- montagem ---------- */
-  function wordmark() {
+  function marcaHtml(cls) {
+    if (D.marca.logo) return '<img class="logo ' + cls + '" src="' + esc(D.marca.logo) + '" alt="' + esc(D.marca.nome) + '" width="1000" height="378">';
     var n = D.marca.nome.toLowerCase();
-    return '<span class="wordmark">' + esc(n.slice(0, 4)) + "<b>" + esc(n.slice(4)) + "</b></span>";
+    return '<span class="wordmark ' + cls + '">' + esc(n.slice(0, 4)) + "<b>" + esc(n.slice(4)) + "</b></span>";
   }
 
   function hero() {
     var c = D.capa;
-    var brand = '<div class="brand">' +
-      (D.marca.logo ? '<img class="logo" src="' + esc(D.marca.logo) + '" alt="' + esc(D.marca.nome) + '">' : wordmark()) +
-      "<small>" + esc(D.marca.slogan) + " &middot; " + esc(D.marca.cidade) + "</small></div>";
     var selo = c.selo && c.selo.ativo ? '<span class="chip">' + esc(c.selo.texto) + "</span>" : "";
-    return '<header class="hero"><div class="wrap"><div>' + brand + selo +
+    return '<header class="hero"><div class="wrap"><div class="hero-text">' + marcaHtml("hero-logo") + selo +
       "<h1>" + esc(c.titulo) + " <span>" + esc(c.destaque) + "</span></h1>" +
-      '<p class="lede">' + esc(c.frase) + "</p></div>" +
-      '<div class="hero-photo"><img src="' + esc(c.foto) + '" alt="' + esc(c.fotoDescricao) + '" width="720" height="900" fetchpriority="high">' +
+      '<p class="lede">' + esc(c.frase) + "</p>" +
+      '<p class="from">a partir de <b>' + brlHtml(minPrice()) + "</b></p></div>" +
+      '<div class="hero-photo"><img src="' + esc(c.foto) + '" alt="' + esc(c.fotoDescricao) + '" width="720" height="900" loading="lazy" decoding="async">' +
       '<div class="stamp">a partir de<strong>' + brlHtml(minPrice()) + "</strong></div></div></div></header>";
   }
 
@@ -68,6 +75,13 @@
     return h + "</div></div>";
   }
 
+  function tabs(lista) {
+    if (lista.length < 2) return "";
+    return '<nav class="tabs" aria-label="Seções do cardápio"><div class="wrap">' + lista.map(function (c) {
+      return '<a href="#col-' + esc(c.id) + '">' + esc(c.titulo) + "</a>";
+    }).join("") + "</div></nav>";
+  }
+
   function row(sabor, s) {
     if (isOut(sabor, s)) {
       return '<div class="row off"><span class="sz">' + s + '</span><span class="pr">' + brlHtml(sabor.preco[s]) +
@@ -75,16 +89,18 @@
     }
     return '<div class="row"><span class="sz">' + s + '</span><span class="pr">' + brlHtml(sabor.preco[s]) + "</span>" +
       '<div class="step" data-id="' + esc(sabor.id) + '" data-size="' + s + '">' +
-      '<button type="button" class="b minus" aria-label="Tirar um ' + s + '" disabled>&minus;</button>' +
+      '<button type="button" class="b minus" aria-label="Tirar um ' + s + " de " + esc(sabor.nome) + '" disabled>&minus;</button>' +
       '<output class="q" aria-live="polite">0</output>' +
-      '<button type="button" class="b plus" aria-label="Adicionar um ' + s + '">+</button></div></div>';
+      '<button type="button" class="b plus" aria-label="Adicionar um ' + s + " de " + esc(sabor.nome) + '">+</button></div></div>';
   }
 
   function card(sabor, wide) {
     var out = allOut(sabor);
     var media;
     if (sabor.foto) {
-      media = '<img src="' + esc(sabor.foto) + '" alt="' + esc(sabor.fotoDescricao || sabor.nome) + '" width="720" height="900" loading="lazy" decoding="async">';
+      var alt = sabor.fotoDescricao || sabor.nome;
+      media = '<button type="button" class="zoom" data-src="' + esc(sabor.foto) + '" data-alt="' + esc(alt) + '" aria-label="Ver foto de ' + esc(sabor.nome) + ' maior">' +
+        '<img src="' + esc(mini(sabor.foto)) + '" srcset="' + esc(mini(sabor.foto)) + ' 260w, ' + esc(sabor.foto) + ' 720w" sizes="(max-width: 719px) 108px, 340px" alt="' + esc(alt) + '" width="260" height="260" loading="lazy" decoding="async"></button>';
     } else {
       media = '<div class="tile tile-' + esc(sabor.cartao || "leite") + '" aria-hidden="true"><span>' + esc(sabor.nome) + "</span></div>";
     }
@@ -96,14 +112,18 @@
       '<div class="body"><h3>' + esc(sabor.nome) + '</h3><p class="desc">' + esc(sabor.descricao) + "</p>" + rows + "</div></article>";
   }
 
-  function groups() {
-    return D.grupos.map(function (g) {
-      var single = g.sabores.length === 1;
-      return '<section class="block" aria-labelledby="h-' + esc(g.id) + '"><div class="sec-head"><h2 id="h-' + esc(g.id) + '">' + esc(g.titulo) + "</h2>" +
-        (g.subtitulo ? "<p>" + g.subtitulo.replace("+", "<b>+</b>") + "</p>" : "") + "</div>" +
-        (single ? card(g.sabores[0], true) : '<div class="grid">' + g.sabores.map(function (x) { return card(x, false); }).join("") + "</div>") +
-        "</section>";
-    }).join("");
+  function grupo(c, g) {
+    var single = g.sabores.length === 1;
+    var id = "h-" + esc(c.id) + "-" + esc(g.id);
+    return '<div class="grupo" role="group" aria-labelledby="' + id + '"><div class="sec-head"><h3 id="' + id + '">' + esc(g.titulo) + "</h3>" +
+      (g.subtitulo ? "<p>" + esc(g.subtitulo).replace("+", "<b>+</b>") + "</p>" : "") + "</div>" +
+      '<div class="grid' + (single ? " single" : "") + " n" + g.sabores.length + '">' + g.sabores.map(function (x) { return card(x, single); }).join("") + "</div></div>";
+  }
+
+  function secao(c) {
+    return '<section class="colecao block" id="col-' + esc(c.id) + '" aria-labelledby="t-' + esc(c.id) + '">' +
+      '<div class="col-head"><h2 id="t-' + esc(c.id) + '">' + esc(c.titulo) + "</h2>" + (c.subtitulo ? "<p>" + esc(c.subtitulo) + "</p>" : "") + "</div>" +
+      c.grupos.filter(function (g) { return g.sabores.length; }).map(function (g) { return grupo(c, g); }).join("") + "</section>";
   }
 
   function info() {
@@ -122,18 +142,16 @@
   }
 
   function footer() {
-    var n = D.marca.nome.toLowerCase();
-    var marca = D.marca.logo
-      ? '<img class="logo" src="' + esc(D.marca.logo) + '" alt="' + esc(D.marca.nome) + '" loading="lazy">'
-      : "<b>" + esc(n.slice(0, 4)) + "<em>" + esc(n.slice(4)) + "</em></b><br>";
-    return "<footer>" + marca + esc(D.marca.slogan) + " &middot; " + esc(D.marca.cidade) + "</footer>";
+    return '<footer><div class="wrap">' + marcaHtml("foot-logo") + "<p>" + esc(D.marca.slogan) + " &middot; " + esc(D.marca.cidade) + "</p></div></footer>";
   }
 
   function bar() {
-    return '<div class="bar"><div class="bar-in"><div class="sum"><div class="t" id="total">Monte seu pedido</div>' +
-      '<div class="s" id="sub">Escolha sabor e tamanho no <b>+</b></div>' +
-      '<button type="button" class="clear" id="clear" hidden>Limpar pedido</button></div>' +
-      '<a class="go" id="go" href="https://wa.me/' + D.contato.whatsapp + '" target="_blank" rel="noopener">' + WA_ICON + "Pedir no WhatsApp</a></div></div>";
+    return '<div class="bar"><div class="bar-in"><div class="sum">' +
+      '<div class="t" id="total" hidden></div>' +
+      '<div class="s" id="sub">Toque no <b>+</b> pra montar</div>' +
+      '<button type="button" class="clear" id="clear" hidden>Limpar</button></div>' +
+      '<a class="go" id="go" href="https://wa.me/' + D.contato.whatsapp + '" target="_blank" rel="noopener">' + WA_ICON + "<span>Pedir no WhatsApp</span></a></div></div>" +
+      '<div class="lb" id="lb" hidden><button type="button" class="lb-x" aria-label="Fechar foto">&times;</button><img alt=""></div>';
   }
 
   /* ---------- pedido ---------- */
@@ -156,25 +174,45 @@
     var total = document.getElementById("total"), s = document.getElementById("sub"),
         go = document.getElementById("go"), clr = document.getElementById("clear"), msg;
     if (items) {
+      total.hidden = false;
       total.textContent = brl(sub + FEE);
-      s.textContent = items + (items > 1 ? " itens" : " item") + " \u00b7 " + brl(sub) + " + entrega " + brl(FEE);
+      s.textContent = items + (items > 1 ? " itens" : " item") + " + entrega " + brl(FEE).replace(" ", " ");
       clr.hidden = false;
       msg = "Ol\u00e1, " + D.marca.nome + "! Quero fazer um pedido:\n\n" + lines.join("\n") +
         "\n\nSubtotal: " + brl(sub) + "\nEntrega: " + brl(FEE) + "\nTotal: " + brl(sub + FEE) +
         "\n\nNome:\nEndere\u00e7o:\nDia da entrega:";
     } else {
-      total.textContent = "Monte seu pedido";
-      s.innerHTML = "Escolha sabor e tamanho no <b>+</b>";
+      total.hidden = true;
+      total.textContent = "";
+      s.innerHTML = "Toque no <b>+</b> pra montar";
       clr.hidden = true;
       msg = "Ol\u00e1, " + D.marca.nome + "! Vi o card\u00e1pio e quero fazer um pedido.";
     }
     go.href = "https://wa.me/" + D.contato.whatsapp + "?text=" + encodeURIComponent(msg);
   }
 
+  function fechaFoto() {
+    var lb = document.getElementById("lb");
+    lb.hidden = true;
+    document.documentElement.classList.remove("lb-open");
+  }
+
   function start() {
-    document.getElementById("app").innerHTML = hero() + sizesBar() + '<main class="wrap">' + groups() + info() + "</main>" + footer() + bar();
+    var lista = secoes();
+    document.getElementById("app").innerHTML = hero() + sizesBar() + tabs(lista) +
+      '<main class="wrap">' + lista.map(secao).join("") + info() + "</main>" + footer() + bar();
 
     document.addEventListener("click", function (e) {
+      var z = e.target.closest(".zoom");
+      if (z) {
+        var lb = document.getElementById("lb"), im = lb.querySelector("img");
+        im.src = z.dataset.src; im.alt = z.dataset.alt;
+        lb.hidden = false;
+        document.documentElement.classList.add("lb-open");
+        lb.querySelector(".lb-x").focus();
+        return;
+      }
+      if (e.target.closest("#lb")) { fechaFoto(); return; }
       var b = e.target.closest(".b");
       if (!b) return;
       var st = b.closest(".step"), k = key(st.dataset.id, st.dataset.size);
@@ -182,6 +220,7 @@
       cart[k] = Math.max(0, Math.min(20, q));
       render();
     });
+    document.addEventListener("keydown", function (e) { if (e.key === "Escape") fechaFoto(); });
     document.getElementById("clear").addEventListener("click", function () { cart = {}; render(); });
     document.getElementById("copy-num").addEventListener("click", function (e) {
       var btn = e.currentTarget, txt = document.getElementById("whats-num").textContent;

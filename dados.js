@@ -54,13 +54,26 @@ const DADOS = {
     M: "aprox. 600g",
   },
 
-  /* ---------- Cardápio ----------
-     esgotado: []          → disponível
-     esgotado: ["M"]       → só o tamanho M esgotado
-     esgotado: ["P", "M"]  → sabor inteiro esgotado
-     foto: null            → mostra um cartão com o nome (sem foto)
+  /* ---------- Cardápio, dividido em SEÇÕES ----------
+     Cada seção aparece separada no site e nas imagens.
+       "especial"  → os especiais da época (hoje: Especial de fim de ano).
+                     Para trocar o nome (ex.: Páscoa), mude o "titulo".
+                     Para tirar do ar: ativa: false.
+       "cardapio"  → o cardápio de sempre. Fica escondido enquanto não tiver
+                     itens; quando tiver, aparece sozinho, separado do especial.
+     Em cada sabor:
+       esgotado: []          → disponível
+       esgotado: ["M"]       → só o tamanho M esgotado
+       esgotado: ["P", "M"]  → sabor inteiro esgotado
+       foto: null            → mostra um cartão com o nome (sem foto)
   ---------------------------------- */
-  grupos: [
+  colecoes: [
+  {
+   id: "especial",
+   ativa: true,
+   titulo: "Especial de fim de ano",
+   subtitulo: "",
+   grupos: [
     {
       id: "trufados",
       titulo: "Trufados",
@@ -97,16 +110,6 @@ const DADOS = {
           esgotado: [],
         },
         {
-          id: "leite-em-po",
-          nome: "Leite em pó",
-          descricao: "Recheio de brigadeiro de leite em pó.",                     // CONFIRMAR
-          foto: null,
-          cartao: "leite",
-          destaque: null,
-          preco: { P: 30, M: 60 },
-          esgotado: [],
-        },
-        {
           id: "doce-de-leite",
           nome: "Doce de leite",
           descricao: "Recheio de doce de leite.",                                 // CONFIRMAR
@@ -136,6 +139,15 @@ const DADOS = {
         },
       ],
     },
+   ],
+  },
+  {
+   id: "cardapio",
+   ativa: true,
+   titulo: "Cardápio",
+   subtitulo: "",
+   grupos: [],      // ainda sem itens: a seção não aparece
+  },
   ],
 
   /* ---------- Como funciona ----------

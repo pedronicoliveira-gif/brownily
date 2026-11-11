@@ -1,9 +1,10 @@
-/* Gera, a partir do dados.js: QR Code, imagens 1080x1920 (stories/WhatsApp), PDF e a imagem de pré-visualização do link. */
+/* Gera, a partir do dados.js: miniaturas, QR Code, imagens 1080x1920 (stories/WhatsApp), PDF e a imagem de pré-visualização do link. */
 const fs = require("fs");
 const path = require("path");
 const DADOS = require("../dados.js");
 const { abrirNavegador } = require("./navegador.js");
 const { gerarQR } = require("./qr.js");
+const { gerarMiniaturas } = require("./fotos.js");
 
 const RAIZ = path.join(__dirname, "..");
 const PASTA = path.join(RAIZ, "materiais");
@@ -15,7 +16,8 @@ const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&a
 const brl = v => { const n = Number(v); return "R$&nbsp;" + (n % 1 === 0 ? n : n.toFixed(2).replace(".", ",")); };
 const fora = (x, s) => (x.esgotado || []).includes(s);
 const tudoFora = x => TAM.every(s => fora(x, s));
-const todos = () => D.grupos.flatMap(g => g.sabores);
+const secoes = () => D.colecoes.filter(c => c.ativa !== false && c.grupos.some(g => g.sabores.length));
+const todos = () => secoes().flatMap(c => c.grupos.flatMap(g => g.sabores));
 const menorPreco = () => {
   const disp = todos().flatMap(x => TAM.filter(s => !fora(x, s)).map(s => x.preco[s]));
   return Math.min(...(disp.length ? disp : todos().flatMap(x => TAM.map(s => x.preco[s]))));
@@ -27,90 +29,90 @@ const marca = (cls = "") => temLogo()
   : (() => { const n = D.marca.nome.toLowerCase(); return `<span class="wordmark ${cls}">${esc(n.slice(0, 4))}<b>${esc(n.slice(4))}</b></span>`; })();
 
 const CSS = `
-@font-face{font-family:"Lilita One";src:url("../fonts/lilita-one.woff2") format("woff2");font-weight:400}
+@font-face{font-family:"Titan One";src:url("../fonts/titan-one.woff2") format("woff2");font-weight:400}
 @font-face{font-family:"Nunito";src:url("../fonts/nunito.woff2") format("woff2");font-weight:200 1000}
-:root{--choc:#2b1711;--choc2:#3d2219;--lilac:#c7aecb;--soft:#f3ebf5;--purple:#915daf;--ink2:#4a2a63;--paper:#fbf8f4;--line:#e8dded;--muted:#6e5a54;--ondark:#fbf3ea;--ondark2:#d7c4bb;--fd:"Lilita One","Arial Rounded MT Bold",sans-serif;--fb:"Nunito","Segoe UI",sans-serif}
+:root{--choc:#2b1711;--choc2:#3d2219;--lilac:#c7aecb;--soft:#f3ebf5;--purple:#915daf;--ink2:#4a2a63;--paper:#f6eee2;--line:#e6d9c6;--muted:#6e5a54;--ondark:#fff7ec;--ondark2:#dccbbd;--fd:"Titan One","Arial Rounded MT Bold",sans-serif;--fb:"Nunito","Segoe UI",sans-serif;
+--marrom:linear-gradient(165deg,#4a2d24 0%,#3a2019 55%,#2b1711 100%)}
 @page{size:1080px 1920px;margin:0}
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:#777}
 body{font-family:var(--fb);font-weight:600;color:var(--choc)}
 .pg{width:1080px;height:1920px;position:relative;overflow:hidden;break-after:page;page-break-after:always;display:flex;flex-direction:column}
 .pg:last-child{break-after:auto;page-break-after:auto}
-.dots::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.35;background-image:radial-gradient(rgba(207,183,230,.18) 2px,transparent 3px);background-size:40px 40px}
+.dots::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.5;background-image:radial-gradient(rgba(199,174,203,.2) 2px,transparent 3px);background-size:40px 40px}
 .wordmark{font-family:var(--fd);font-size:64px;line-height:1;color:var(--ondark)}.wordmark b{font-weight:400;color:var(--lilac)}
-.wordmark.sm{font-size:48px}
-.logo{height:120px;width:auto;display:block}.logo.sm{height:84px}
-.slogan{font-weight:900;font-size:24px;letter-spacing:.16em;text-transform:uppercase;color:var(--ondark2)}
-.dark{background:var(--choc);color:var(--ondark)}
+.logo{width:auto;display:block;filter:drop-shadow(0 10px 22px rgba(20,8,32,.35))}
+.marrom{background:var(--marrom);color:var(--ondark)}
 .light{background:var(--paper)}
 h1,h2,h3{font-family:var(--fd);font-weight:400;margin:0;line-height:1}
 .rel{position:relative;z-index:1}
 
 /* capa */
-.capa{padding:88px 80px 0}
-.capa .top{display:flex;align-items:center;gap:22px}
+.capa{padding:84px 80px 0}
+.capa .logo{height:240px}
 .chip{display:inline-block;background:var(--lilac);color:var(--ink2);font-weight:900;font-size:26px;letter-spacing:.14em;text-transform:uppercase;padding:12px 26px;border-radius:999px}
-.capa h1{font-size:150px;margin-top:26px;letter-spacing:.005em}
+.capa h1{font-size:112px;line-height:1.08;margin-top:22px;letter-spacing:.005em;color:var(--ondark)}
 .capa h1 span{display:block;color:var(--lilac)}
-.capa .lede{font-size:40px;line-height:1.35;color:var(--ondark2);margin:30px 0 0;max-width:30ch;font-weight:600}
-.capa .foto{position:absolute;left:50%;bottom:215px;width:640px;margin-left:-300px}
-.capa .foto img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:44px;transform:rotate(3deg);box-shadow:0 40px 80px rgba(0,0,0,.5)}
+.capa .lede{font-size:36px;line-height:1.35;color:var(--ondark2);margin:22px 0 0;max-width:30ch;font-weight:600}
+.capa .foto{position:absolute;left:50%;bottom:215px;width:560px;margin-left:-260px}
+.capa .foto img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:44px;transform:rotate(3deg);box-shadow:0 40px 80px rgba(0,0,0,.45)}
 .stamp{position:absolute;left:-70px;bottom:50px;background:var(--paper);color:var(--choc);border-radius:26px;padding:20px 30px;transform:rotate(-5deg);box-shadow:0 18px 40px rgba(0,0,0,.35);font-weight:800;font-size:30px;line-height:1.2}
-.stamp strong{font-family:var(--fd);font-weight:400;font-size:64px;color:var(--purple);display:block}
-.capa .rodape{position:absolute;left:0;right:0;bottom:0;height:170px;background:var(--lilac);color:var(--ink2);display:flex;align-items:center;justify-content:center;gap:24px;font-weight:900;font-size:42px}
-.capa .rodape small{display:block;font-size:26px;letter-spacing:.14em;text-transform:uppercase;font-weight:900;opacity:.8}
+.stamp strong{font-family:var(--fd);font-weight:400;font-size:54px;color:var(--purple);display:block}
+.capa .rodape{position:absolute;left:0;right:0;bottom:0;height:170px;background:var(--lilac);color:var(--ink2);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:42px;text-align:center}
+.capa .rodape small{display:block;font-size:26px;letter-spacing:.14em;text-transform:uppercase;font-weight:900;opacity:.85}
 
 /* cardapio */
-.cab{padding:70px 70px 0;display:flex;align-items:center;justify-content:space-between}
-.cab .wordmark{color:var(--choc)}.cab .wordmark b{color:var(--purple)}
-.cab .tams{display:flex;gap:14px}
-.cab .tams span{display:flex;align-items:center;gap:10px;background:var(--soft);border-radius:999px;padding:8px 20px 8px 8px;font-weight:800;font-size:23px;color:var(--muted)}
-.cab .tams i{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:50%;background:var(--choc);color:var(--ondark);font-style:normal;font-family:var(--fd);font-size:22px}
-.lista{flex:1;padding:36px 70px 0;display:flex;flex-direction:column;gap:30px}
-.grupo{font-size:76px;color:var(--choc);margin:6px 0 -2px}
-.item{display:flex;height:400px;background:#fff;border:3px solid var(--line);border-radius:36px;overflow:hidden;position:relative}
-.item .m{position:relative;width:320px;height:400px;flex:none;background:var(--choc2)}
+.cab{background:var(--marrom);padding:44px 70px 40px;display:flex;align-items:center;justify-content:space-between;position:relative}
+.cab .logo{height:116px}
+.cab .tams{display:flex;gap:12px}
+.cab .tams span{display:flex;align-items:center;gap:10px;background:var(--lilac);border-radius:999px;padding:7px 20px 7px 7px;font-weight:800;font-size:23px;color:var(--ink2)}
+.cab .tams i{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:50%;background:var(--ink2);color:#fff;font-style:normal;font-family:var(--fb);font-weight:900;font-size:22px}
+.lista{flex:1;padding:30px 70px 0;display:flex;flex-direction:column;gap:22px}
+.pill{align-self:flex-start;background:linear-gradient(120deg,var(--purple),var(--ink2));color:#fff;font-family:var(--fd);font-size:36px;padding:10px 34px 12px;border-radius:999px}
+.grupo{font-size:54px;color:var(--choc);margin:2px 0 -6px}
+.item{display:flex;min-height:380px;max-height:470px;flex:1 1 380px;background:#fff;border:3px solid var(--line);border-radius:36px;overflow:hidden;position:relative}
+.item .m{position:relative;width:304px;align-self:stretch;flex:none;background:var(--choc2)}
 .item .m img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .item .tag{position:absolute;top:18px;left:18px;background:var(--purple);color:#fff;font-weight:900;font-size:22px;letter-spacing:.12em;text-transform:uppercase;padding:8px 18px;border-radius:999px;z-index:2}
 .tile{position:absolute;inset:0;display:grid;place-items:center;padding:24px;overflow:hidden;background:var(--choc2)}
 .tile::before{content:"";position:absolute;width:150%;height:62%;left:-25%;bottom:-16%;border-radius:50% 50% 0 0}
-.tile span{position:relative;z-index:1;font-family:var(--fd);font-size:58px;line-height:1;text-align:center}
+.tile span{position:relative;z-index:1;font-family:var(--fd);font-size:44px;line-height:1.05;text-align:center}
 .tile.leite span{color:#f6eedf}.tile.leite::before{background:#efe3c8;opacity:.18}
 .tile.doce span{color:#e7b36b}.tile.doce::before{background:#c4843d;opacity:.25}
-.item .t{flex:1;padding:30px 36px;display:flex;flex-direction:column;justify-content:center;gap:14px;min-width:0}
-.item h3{font-size:58px;color:var(--choc)}
-.item p{margin:0 0 6px;font-size:27px;line-height:1.3;color:var(--muted);font-weight:600}
-.pre{display:flex;align-items:center;gap:18px;border-top:3px dashed var(--line);padding-top:14px}
+.item .t{flex:1;padding:26px 36px;display:flex;flex-direction:column;justify-content:center;gap:12px;min-width:0}
+.item h3{font-size:44px;line-height:1.05;color:var(--choc)}
+.item p{margin:0 0 4px;font-size:27px;line-height:1.3;color:var(--muted);font-weight:600}
+.pre{display:flex;align-items:center;gap:18px;border-top:3px dashed var(--line);padding-top:12px}
 .pre .z{width:50px;height:50px;border-radius:50%;background:var(--soft);color:var(--ink2);display:grid;place-items:center;font-weight:900;font-size:26px;flex:none}
-.pre .v{font-family:var(--fd);font-size:48px;color:var(--choc)}
+.pre .v{font-family:var(--fd);font-size:40px;color:var(--choc)}
 .pre .e{margin-left:auto;font-weight:900;font-size:22px;letter-spacing:.1em;text-transform:uppercase;color:#8a7d83;background:#ece7ea;border-radius:999px;padding:8px 18px}
 .pre.off .v{color:#9b8f94;text-decoration:line-through}.pre.off .z{background:#ece7ea;color:#9b8f94}
-.item.out{background:#f3f0f2;border-color:#e3dde0}
+.item.out{background:#f1ebe3;border-color:#e3d9cb}
 .item.out .m img,.item.out .tile{filter:grayscale(1) opacity(.55)}
 .item.out h3,.item.out p{color:#9b8f94}
 .item.out .tag{background:#9b8f94}
-.item .selo-out{position:absolute;left:160px;top:200px;transform:translate(-50%,-50%) rotate(-6deg);background:var(--choc);color:var(--ondark);font-family:var(--fd);font-size:44px;padding:10px 30px;border-radius:20px;border:4px solid var(--ondark);z-index:3;white-space:nowrap}
-.pe{height:150px;display:flex;align-items:center;justify-content:center;gap:16px;font-weight:900;font-size:34px;color:var(--ink2);background:var(--soft);margin-top:30px}
-.pe b{font-family:var(--fd);font-weight:400;font-size:40px;color:var(--choc)}
+.item .selo-out{position:absolute;left:152px;top:50%;transform:translate(-50%,-50%) rotate(-6deg);background:var(--choc);color:var(--ondark);font-family:var(--fd);font-size:36px;padding:10px 30px;border-radius:20px;border:4px solid var(--ondark);z-index:3;white-space:nowrap}
+.pe{height:130px;display:flex;align-items:center;justify-content:center;gap:16px;font-weight:900;font-size:34px;color:var(--ink2);background:var(--lilac);margin-top:26px;flex:none}
+.pe b{font-family:var(--fd);font-weight:400;font-size:36px;color:var(--ink2)}
 
 /* informacoes */
-.info{padding:96px 80px 100px;justify-content:space-between}
-.info .fim{display:flex;align-items:center;gap:22px}
-.info h2{font-size:120px;color:var(--ondark)}
-.regras{display:flex;flex-direction:column;gap:22px;margin-top:0}
-.regra{display:flex;align-items:center;gap:28px;background:rgba(207,183,230,.14);border:2px solid rgba(207,183,230,.25);border-radius:34px;padding:30px 36px}
+.info{padding:90px 80px 90px;justify-content:space-between}
+.info h2{font-size:94px;line-height:1.05;color:var(--ondark)}
+.regras{display:flex;flex-direction:column;gap:22px}
+.regra{display:flex;align-items:center;gap:28px;background:rgba(199,174,203,.13);border:2px solid rgba(199,174,203,.3);border-radius:34px;padding:30px 36px}
 .regra svg{width:70px;height:70px;color:var(--lilac);flex:none}
 .regra strong{display:block;font-size:40px;font-weight:900;color:var(--ondark)}
 .regra span{font-size:32px;color:var(--ondark2);font-weight:600}
-.qrbox{margin:0;display:flex;align-items:center;gap:40px;background:var(--paper);border-radius:44px;padding:34px 44px 34px 34px;color:var(--choc);width:100%}
+.qrbox{display:flex;align-items:center;gap:40px;background:var(--paper);border-radius:44px;padding:34px 44px 34px 34px;color:var(--choc);width:100%}
 .qrbox img{width:460px;height:460px;display:block;flex:none}
-.qrbox h3{font-size:64px;color:var(--choc)}
+.qrbox h3{font-size:50px;line-height:1.1;color:var(--choc)}
 .qrbox h3 span{color:var(--purple)}
 .qrbox p{margin:14px 0 0;font-size:30px;line-height:1.3;color:var(--muted);font-weight:700}
-.contatos{margin-top:0;display:flex;flex-direction:column;gap:18px}
+.contatos{display:flex;flex-direction:column;gap:18px}
 .contatos div{display:flex;align-items:center;gap:22px;font-size:46px;font-weight:900;color:var(--ondark)}
 .contatos svg{width:54px;height:54px;color:var(--lilac);flex:none}
 .contatos .u{font-size:30px;color:var(--ondark2);font-weight:700}
+.info .logo{height:180px}
 `;
 
 const ICONES = {
@@ -124,13 +126,13 @@ const ICONES = {
 
 function paginaCapa() {
   const c = D.capa;
-  return `<section class="pg dark dots capa" data-nome="capa">
-    <div class="rel top">${marca()}<span class="slogan">${esc(D.marca.slogan)}<br>${esc(D.marca.cidade)}</span></div>
-    ${c.selo && c.selo.ativo ? `<div class="rel" style="margin-top:56px"><span class="chip">${esc(c.selo.texto)}</span></div>` : ""}
+  return `<section class="pg marrom dots capa" data-nome="capa">
+    <div class="rel">${marca()}</div>
+    ${c.selo && c.selo.ativo ? `<div class="rel" style="margin-top:44px"><span class="chip">${esc(c.selo.texto)}</span></div>` : ""}
     <h1 class="rel">${esc(c.titulo)} <span>${esc(c.destaque)}</span></h1>
     <p class="lede rel">${esc(c.frase)}</p>
     <div class="foto rel"><img src="../${esc(c.foto)}" alt=""><div class="stamp">a partir de<strong>${brl(menorPreco())}</strong></div></div>
-    <div class="rodape"><div style="text-align:center"><small>Peça pelo WhatsApp</small>${esc(D.contato.whatsappTexto)}</div></div>
+    <div class="rodape"><div><small>Peça pelo WhatsApp</small>${esc(D.contato.whatsappTexto)}</div></div>
   </section>`;
 }
 
@@ -151,18 +153,19 @@ function item(x) {
 
 function paginasCardapio() {
   const itens = [];
-  D.grupos.forEach(g => g.sabores.forEach(x => itens.push({ g, x })));
+  secoes().forEach(c => c.grupos.forEach(g => g.sabores.forEach(x => itens.push({ c, g, x }))));
   const paginas = [];
   for (let i = 0; i < itens.length; i += POR_PAGINA) paginas.push(itens.slice(i, i + POR_PAGINA));
   const tams = `<div class="tams">${TAM.map(s => `<span><i>${s}</i>${esc(D.tamanhos[s])}</span>`).join("")}</div>`;
   return paginas.map((lista, n) => {
-    let corpo = "", atual = null;
-    lista.forEach(({ g, x }) => {
-      if (g.id !== atual) { corpo += `<h2 class="grupo">${esc(g.titulo)}</h2>`; atual = g.id; }
+    let corpo = "", col = null, grp = null;
+    lista.forEach(({ c, g, x }) => {
+      if (c.id !== col) { corpo += `<div class="pill">${esc(c.titulo)}</div>`; col = c.id; grp = null; }
+      if (g.id !== grp) { corpo += `<h2 class="grupo">${esc(g.titulo)}</h2>`; grp = g.id; }
       corpo += item(x);
     });
     return `<section class="pg light" data-nome="cardapio-${n + 1}">
-      <div class="cab">${marca("sm").replace('class="wordmark sm"', 'class="wordmark sm"')}${tams}</div>
+      <div class="cab">${marca()}${tams}</div>
       <div class="lista">${corpo}</div>
       <div class="pe">Peça pelo WhatsApp <b>${esc(D.contato.whatsappTexto)}</b></div>
     </section>`;
@@ -171,7 +174,7 @@ function paginasCardapio() {
 
 function paginaInfo(urlCurta) {
   const regras = D.regras.map(r => `<div class="regra">${ICONES[r.icone] || ""}<div><strong>${esc(r.titulo)}</strong><span>${esc(r.texto.replace("{taxa}", String(D.entrega.taxa))).replace("R$ ", () => "R$&nbsp;")}</span></div></div>`).join("");
-  return `<section class="pg dark dots info" data-nome="informacoes">
+  return `<section class="pg marrom dots info" data-nome="informacoes">
     <h2 class="rel">Como funciona</h2>
     <div class="regras rel">${regras}</div>
     <div class="qrbox rel"><img src="../materiais/qr-brownily.png" alt="QR Code"><div><h3>Escaneie e <span>peça</span></h3><p>Aponte a câmera do celular para abrir o cardápio completo.</p></div></div>
@@ -180,16 +183,16 @@ function paginaInfo(urlCurta) {
       <div>${ICONES.instagram}@${esc(D.marca.instagram)}</div>
       <div class="u">${ICONES.globo}${esc(urlCurta)}</div>
     </div>
-    <div class="fim rel">${marca()}<span class="slogan">${esc(D.marca.slogan)}<br>${esc(D.marca.cidade)}</span></div>
+    <div class="rel">${marca()}</div>
   </section>`;
 }
 
 function paginaCompartilhar() {
   const c = D.capa;
-  return `<section class="pg dark dots" style="width:1200px;height:630px;flex-direction:row;align-items:center;padding:0 70px;gap:50px" data-nome="compartilhar">
-    <div class="rel" style="flex:1">${marca()}${c.selo && c.selo.ativo ? `<div style="margin-top:30px"><span class="chip" style="font-size:20px;padding:8px 20px">${esc(c.selo.texto)}</span></div>` : ""}
-      <h1 style="font-size:104px;margin-top:20px">${esc(c.titulo)}<br><span style="color:var(--lilac)">${esc(c.destaque)}</span></h1>
-      <div style="margin-top:22px;font-size:30px;color:var(--ondark2);font-weight:800">Peça pelo WhatsApp &middot; ${esc(D.marca.cidade)}</div></div>
+  return `<section class="pg marrom dots" style="width:1200px;height:630px;flex-direction:row;align-items:center;padding:0 70px;gap:50px" data-nome="compartilhar">
+    <div class="rel" style="flex:1">${marca().replace('class="logo ', 'style="height:180px" class="logo ')}${c.selo && c.selo.ativo ? `<div style="margin-top:26px"><span class="chip" style="font-size:20px;padding:8px 20px">${esc(c.selo.texto)}</span></div>` : ""}
+      <h1 style="font-size:78px;line-height:1.1;margin-top:18px;color:var(--ondark)">${esc(c.titulo)}<br><span style="color:var(--lilac)">${esc(c.destaque)}</span></h1>
+      <div style="margin-top:20px;font-size:30px;color:var(--ondark2);font-weight:800">Peça pelo WhatsApp &middot; ${esc(D.marca.cidade)}</div></div>
     <div class="rel" style="width:400px;flex:none"><img src="../${esc(c.foto)}" style="display:block;width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:36px;transform:rotate(3deg);box-shadow:0 30px 60px rgba(0,0,0,.5)" alt=""></div>
   </section>`;
 }
@@ -218,6 +221,7 @@ function atualizarIndex() {
 
 async function gerarMateriais() {
   fs.mkdirSync(PASTA, { recursive: true });
+  await gerarMiniaturas();
   await gerarQR();
   atualizarIndex();
 
@@ -236,10 +240,10 @@ async function gerarMateriais() {
   await p.evaluate(() => document.fonts.ready);
   await p.evaluate(() => Promise.all([...document.images].map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))));
 
-  const secoes = await p.$$("section.pg");
+  const secs = await p.$$("section.pg");
   let n = 0;
   const arquivos = [];
-  for (const s of secoes) {
+  for (const s of secs) {
     const nome = await s.getAttribute("data-nome");
     if (nome === "compartilhar") { await s.screenshot({ path: path.join(PASTA, "compartilhar.jpg"), type: "jpeg", quality: 86 }); continue; }
     n++;
