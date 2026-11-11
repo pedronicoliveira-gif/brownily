@@ -14,14 +14,20 @@ const POR_PAGINA = 3;
 
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const brl = v => { const n = Number(v); return "R$&nbsp;" + (n % 1 === 0 ? n : n.toFixed(2).replace(".", ",")); };
-const fora = (x, s) => (x.esgotado || []).includes(s);
-const tudoFora = x => TAM.every(s => fora(x, s));
+const fora = (x, k) => (x.esgotado || []).includes(k);
+// linhas de um item: P/M (tamanhos) ou "linhas" próprias (sabores / unidade única)
+const linhasDe = x => x.linhas
+  ? x.linhas.map(l => ({ key: l.id, rotulo: l.rotulo || "", preco: l.preco, badge: "" }))
+  : TAM.map(s => ({ key: s, rotulo: "", preco: x.preco[s], badge: s }));
+const tudoFora = x => { const l = linhasDe(x); return l.length > 0 && l.every(r => fora(x, r.key)); };
 const secoes = () => D.colecoes.filter(c => c.ativa !== false && c.grupos.some(g => g.sabores.length));
-const todos = () => secoes().flatMap(c => c.grupos.flatMap(g => g.sabores));
 const menorPreco = () => {
-  const disp = todos().flatMap(x => TAM.filter(s => !fora(x, s)).map(s => x.preco[s]));
-  return Math.min(...(disp.length ? disp : todos().flatMap(x => TAM.map(s => x.preco[s]))));
+  const alvo = secoes().filter(c => !D.capa.colecao || c.id === D.capa.colecao);
+  const rows = alvo.flatMap(c => c.grupos.flatMap(g => g.sabores.flatMap(x => linhasDe(x).filter(r => typeof r.preco === "number").map(r => ({ r, out: fora(x, r.key) })))));
+  const disp = rows.filter(o => !o.out).map(o => o.r.preco);
+  return Math.min(...(disp.length ? disp : rows.map(o => o.r.preco)));
 };
+const usaTamanhos = c => c.grupos.some(g => g.sabores.some(x => !x.linhas && !x.consultar));
 const temLogo = () => D.marca.logo && fs.existsSync(path.join(RAIZ, D.marca.logo));
 
 const marca = (cls = "") => temLogo()
@@ -70,7 +76,7 @@ h1,h2,h3{font-family:var(--fd);font-weight:400;margin:0;line-height:1}
 .lista{flex:1;padding:30px 70px 0;display:flex;flex-direction:column;gap:22px}
 .pill{align-self:flex-start;background:linear-gradient(120deg,var(--purple),var(--ink2));color:#fff;font-family:var(--fd);font-size:36px;padding:10px 34px 12px;border-radius:999px}
 .grupo{font-size:54px;color:var(--choc);margin:2px 0 -6px}
-.item{display:flex;min-height:380px;max-height:470px;flex:1 1 380px;background:#fff;border:3px solid var(--line);border-radius:36px;overflow:hidden;position:relative}
+.item{display:flex;min-height:380px;max-height:540px;flex:1 1 380px;background:#fff;border:3px solid var(--line);border-radius:36px;overflow:hidden;position:relative}
 .item .m{position:relative;width:304px;align-self:stretch;flex:none;background:var(--choc2)}
 .item .m img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .item .tag{position:absolute;top:18px;left:18px;background:var(--purple);color:#fff;font-weight:900;font-size:22px;letter-spacing:.12em;text-transform:uppercase;padding:8px 18px;border-radius:999px;z-index:2}
@@ -87,6 +93,9 @@ h1,h2,h3{font-family:var(--fd);font-weight:400;margin:0;line-height:1}
 .pre .v{font-family:var(--fd);font-size:40px;color:var(--choc)}
 .pre .e{margin-left:auto;font-weight:900;font-size:22px;letter-spacing:.1em;text-transform:uppercase;color:#8a7d83;background:#ece7ea;border-radius:999px;padding:8px 18px}
 .pre.off .v{color:#9b8f94;text-decoration:line-through}.pre.off .z{background:#ece7ea;color:#9b8f94}
+.pre .lb{font-weight:800;font-size:28px;color:var(--choc);flex:1;min-width:0}
+.pre .lb + .v{margin-left:auto}
+.pre.off .lb{color:#9b8f94}
 .item.out{background:#f1ebe3;border-color:#e3d9cb}
 .item.out .m img,.item.out .tile{filter:grayscale(1) opacity(.55)}
 .item.out h3,.item.out p{color:#9b8f94}
@@ -136,10 +145,10 @@ function paginaCapa() {
   </section>`;
 }
 
-function linhaPreco(x, s) {
-  return fora(x, s)
-    ? `<div class="pre off"><span class="z">${s}</span><span class="v">${brl(x.preco[s])}</span><span class="e">Esgotado</span></div>`
-    : `<div class="pre"><span class="z">${s}</span><span class="v">${brl(x.preco[s])}</span></div>`;
+function linhaPreco(x, r) {
+  const esq = r.badge ? `<span class="z">${esc(r.badge)}</span>` : (r.rotulo ? `<span class="lb">${esc(r.rotulo)}</span>` : "");
+  const off = fora(x, r.key);
+  return `<div class="pre${off ? " off" : ""}${r.badge ? "" : " var"}">${esq}<span class="v">${brl(r.preco)}</span>${off ? '<span class="e">Esgotado</span>' : ""}</div>`;
 }
 
 function item(x) {
@@ -148,24 +157,31 @@ function item(x) {
     : `<div class="tile ${esc(x.cartao || "leite")}"><span>${esc(x.nome)}</span></div>`;
   const out = tudoFora(x);
   return `<div class="item${out ? " out" : ""}"><div class="m">${midia}${x.destaque ? `<span class="tag">${esc(x.destaque)}</span>` : ""}${out ? '<span class="selo-out">Esgotado</span>' : ""}</div>
-    <div class="t"><h3>${esc(x.nome)}</h3><p>${esc(x.descricao)}</p>${TAM.map(s => linhaPreco(x, s)).join("")}</div></div>`;
+    <div class="t"><h3>${esc(x.nome)}</h3>${x.descricao ? `<p>${esc(x.descricao)}</p>` : ""}${
+      x.consultar || !linhasDe(x).length ? '<div class="pre"><span class="lb">Valor sob consulta</span></div>' : linhasDe(x).map(r => linhaPreco(x, r)).join("")}</div></div>`;
 }
 
 function paginasCardapio() {
-  const itens = [];
-  secoes().forEach(c => c.grupos.forEach(g => g.sabores.forEach(x => itens.push({ c, g, x }))));
+  // cada seção começa em página nova (Especial de fim de ano separado do Cardápio)
   const paginas = [];
-  for (let i = 0; i < itens.length; i += POR_PAGINA) paginas.push(itens.slice(i, i + POR_PAGINA));
+  secoes().forEach(c => {
+    const itens = [];
+    c.grupos.forEach(g => g.sabores.forEach(x => itens.push({ c, g, x })));
+    // reparte por igual entre as páginas (ex.: 5 itens = 3 + 2; 7 itens = 3 + 2 + 2)
+    const q = Math.ceil(itens.length / POR_PAGINA), base = Math.floor(itens.length / q), extra = itens.length % q;
+    let i = 0;
+    for (let p = 0; p < q; p++) { const n = base + (p < extra ? 1 : 0); paginas.push({ c, lista: itens.slice(i, i + n) }); i += n; }
+  });
   const tams = `<div class="tams">${TAM.map(s => `<span><i>${s}</i>${esc(D.tamanhos[s])}</span>`).join("")}</div>`;
-  return paginas.map((lista, n) => {
+  return paginas.map(({ c: sec, lista }, n) => {
     let corpo = "", col = null, grp = null;
     lista.forEach(({ c, g, x }) => {
       if (c.id !== col) { corpo += `<div class="pill">${esc(c.titulo)}</div>`; col = c.id; grp = null; }
-      if (g.id !== grp) { corpo += `<h2 class="grupo">${esc(g.titulo)}</h2>`; grp = g.id; }
+      if (g.id !== grp) { if (g.titulo) corpo += `<h2 class="grupo">${esc(g.titulo)}</h2>`; grp = g.id; }
       corpo += item(x);
     });
     return `<section class="pg light" data-nome="cardapio-${n + 1}">
-      <div class="cab">${marca()}${tams}</div>
+      <div class="cab">${marca()}${usaTamanhos(sec) ? tams : ""}</div>
       <div class="lista">${corpo}</div>
       <div class="pe">Peça pelo WhatsApp <b>${esc(D.contato.whatsappTexto)}</b></div>
     </section>`;

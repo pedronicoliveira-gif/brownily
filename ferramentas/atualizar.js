@@ -19,7 +19,12 @@ function conferirDados() {
   DADOS.colecoes.forEach(c => c.grupos.forEach(g => g.sabores.forEach(s => {
     if (ids.has(s.id)) erros.push(`Sabor repetido: ${s.id}`);
     ids.add(s.id);
-    Object.keys(DADOS.tamanhos).forEach(t => { if (typeof s.preco[t] !== "number") erros.push(`${s.nome}: falta o preço do tamanho ${t}`); });
+    if (s.linhas) {
+      if (!s.linhas.length && !s.consultar) erros.push(`${s.nome}: sem preço (use "linhas" ou consultar: true)`);
+      s.linhas.forEach(l => { if (typeof l.preco !== "number") erros.push(`${s.nome} (${l.rotulo || l.id}): preço inválido`); });
+    } else if (!s.consultar) {
+      Object.keys(DADOS.tamanhos).forEach(t => { if (typeof s.preco[t] !== "number") erros.push(`${s.nome}: falta o preço do tamanho ${t}`); });
+    }
     if (s.foto && !fs.existsSync(path.join(RAIZ, s.foto))) erros.push(`${s.nome}: a foto ${s.foto} não existe`);
   })));
   if (!DADOS.colecoes.some(c => c.ativa !== false && c.grupos.some(g => g.sabores.length))) erros.push("Nenhuma seção ativa com sabores.");

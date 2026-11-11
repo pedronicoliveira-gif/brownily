@@ -41,6 +41,7 @@ const DADOS = {
   capa: {
     // Selo da capa. Para desligar depois de janeiro: ativo: false
     selo: { ativo: true, texto: "Especial de fim de ano" },
+    colecao: "especial",         // o "a partir de R$ ..." da capa usa os preços desta seção
     titulo: "BrownieTone",
     destaque: "trufado",
     frase: "Brownie alto e recheado, feito à mão. Escolha o sabor, o tamanho e peça direto pelo WhatsApp.", // CONFIRMAR
@@ -59,13 +60,18 @@ const DADOS = {
        "especial"  → os especiais da época (hoje: Especial de fim de ano).
                      Para trocar o nome (ex.: Páscoa), mude o "titulo".
                      Para tirar do ar: ativa: false.
-       "cardapio"  → o cardápio de sempre. Fica escondido enquanto não tiver
-                     itens; quando tiver, aparece sozinho, separado do especial.
-     Em cada sabor:
-       esgotado: []          → disponível
-       esgotado: ["M"]       → só o tamanho M esgotado
-       esgotado: ["P", "M"]  → sabor inteiro esgotado
-       foto: null            → mostra um cartão com o nome (sem foto)
+       "cardapio"  → o cardápio de sempre (separado do especial, com abas no topo).
+     Cada item tem preço de um destes jeitos:
+       preco: { P: 30, M: 60 }                  → tamanhos P e M
+       linhas: [{ id, rotulo, preco }, ...]     → sabores ou unidade única (rotulo: "" = sem nome)
+       consultar: true                          → sem preço: mostra "Valor sob consulta"
+     esgotado (usa o P/M ou o "id" da linha):
+       esgotado: []                  → disponível
+       esgotado: ["M"]               → só o tamanho M esgotado
+       esgotado: ["P", "M"]          → item inteiro esgotado
+       esgotado: ["ninho"]           → só aquele sabor (linha) esgotado
+     foto: null                      → mostra um cartão com o nome (sem foto)
+     notaPedido: "texto"             → texto que vai junto na mensagem do WhatsApp
   ---------------------------------- */
   colecoes: [
   {
@@ -146,7 +152,102 @@ const DADOS = {
    ativa: true,
    titulo: "Cardápio",
    subtitulo: "",
-   grupos: [],      // ainda sem itens: a seção não aparece
+   grupos: [
+    {
+      id: "copo",
+      titulo: "Brownie no copo",
+      subtitulo: "",
+      sabores: [
+        {
+          id: "copo-maracuja",
+          nome: "Maracujá trufado",
+          nomePedido: "Brownie no copo – Maracujá trufado",
+          descricao: "",                                                          // CONFIRMAR (sem descrição ainda)
+          foto: "fotos/copo-maracuja.jpg",
+          fotoDescricao: "Brownie no copo de maracujá trufado",
+          destaque: null,
+          linhas: [{ id: "un", rotulo: "", preco: 15 }],
+          esgotado: [],
+        },
+        {
+          id: "copo-dois-amores",
+          nome: "Dois amores",
+          nomePedido: "Brownie no copo – Dois amores",
+          descricao: "",                                                          // CONFIRMAR (sem descrição ainda)
+          foto: "fotos/copo-dois-amores.jpg",                                     // CONFIRMAR (qual foto é de qual copo)
+          fotoDescricao: "Brownie no copo de dois amores",
+          destaque: null,
+          linhas: [{ id: "un", rotulo: "", preco: 15 }],
+          esgotado: [],
+        },
+        {
+          id: "copo-ninho-nutella",
+          nome: "Ninho com Nutella",
+          nomePedido: "Brownie no copo – Ninho com Nutella",
+          descricao: "",                                                          // CONFIRMAR (sem descrição ainda)
+          foto: "fotos/copo-ninho-nutella.jpg",                                   // CONFIRMAR (qual foto é de qual copo)
+          fotoDescricao: "Brownie no copo de Ninho com Nutella",
+          destaque: null,
+          linhas: [{ id: "un", rotulo: "", preco: 18 }],
+          esgotado: [],
+        },
+      ],
+    },
+    {
+      id: "mais",
+      titulo: "",
+      subtitulo: "",
+      sabores: [
+        {
+          id: "bombom-brownie",
+          nome: "Bombom brownie",
+          descricao: "Brownie, brigadeiro, pedaços de morango envoltos com uma camada fina de chocolate meio amargo.",
+          foto: "fotos/bombom.jpg",
+          fotoDescricao: "Bombom brownie cortado ao meio, com brigadeiro e morango",
+          destaque: null,
+          consultar: true,                                                        // CONFIRMAR: falta o preço. Quando tiver, troque por: linhas: [{ id: "un", rotulo: "", preco: 0 }]
+          linhas: [],
+          esgotado: [],
+        },
+        {
+          id: "brownie-bites",
+          nome: "Brownie Bites",
+          descricao: "",                                                          // CONFIRMAR (sem descrição ainda)
+          foto: "fotos/bites.jpg",
+          fotoDescricao: "Embalagem de Brownie Bites",
+          destaque: null,
+          linhas: [{ id: "un", rotulo: "", preco: 20 }],
+          esgotado: [],
+        },
+        {
+          id: "brownie-individual",
+          nome: "Brownie individual",
+          descricao: "",                                                          // CONFIRMAR (sem descrição ainda)
+          foto: "fotos/individual.jpg",
+          fotoDescricao: "Brownie individual em embalagem de papel",
+          destaque: null,
+          linhas: [
+            { id: "maracuja",   rotulo: "Maracujá",   preco: 10 },
+            { id: "brigadeiro", rotulo: "Brigadeiro", preco: 10 },
+            { id: "ninho",      rotulo: "Ninho",      preco: 10 },
+            { id: "dois-amores", rotulo: "Dois amores", preco: 10 },
+          ],
+          esgotado: [],
+        },
+        {
+          id: "quarteto-brownie",
+          nome: "Quarteto Brownie",
+          descricao: "Escolha 4 sabores entre Maracujá, Brigadeiro, Ninho e Dois amores. Pode ser todos de um único sabor, dois de cada ou cada um de um sabor.",
+          notaPedido: "Sabores (escolha 4 entre Maracujá, Brigadeiro, Ninho e Dois amores): ",
+          foto: "fotos/quarteto.jpg",
+          fotoDescricao: "Caixa com quatro brownies de sabores variados",
+          destaque: null,
+          linhas: [{ id: "un", rotulo: "", preco: 34.90 }],
+          esgotado: [],
+        },
+      ],
+    },
+   ],
   },
   ],
 

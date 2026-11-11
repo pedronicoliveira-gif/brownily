@@ -22,8 +22,13 @@
   function brlHtml(v) { return brl(v).replace(" ", "&nbsp;"); }
   function key(id, s) { return id + "|" + s; }
   function sizes() { return Object.keys(D.tamanhos); }
-  function isOut(sabor, s) { return (sabor.esgotado || []).indexOf(s) !== -1; }
-  function allOut(sabor) { return sizes().every(function (s) { return isOut(sabor, s); }); }
+  // linhas de um item: P/M (tamanhos) ou as "linhas" próprias (sabores, unidade única...)
+  function rowsOf(x) {
+    if (x.linhas) return x.linhas.map(function (l) { return { key: l.id, label: l.rotulo || "", price: l.preco, badge: "" }; });
+    return sizes().map(function (s) { return { key: s, label: "", price: x.preco[s], badge: s }; });
+  }
+  function isOut(sabor, k) { return (sabor.esgotado || []).indexOf(k) !== -1; }
+  function allOut(sabor) { var r = rowsOf(sabor); return r.length > 0 && r.every(function (l) { return isOut(sabor, l.key); }); }
   function mini(foto) { return foto.replace(/^fotos\//, "fotos/mini/").replace(/\.\w+$/, ".jpg"); }
 
   // seções (colecoes) ativas que têm pelo menos um sabor
@@ -37,11 +42,18 @@
     secoes().forEach(function (c) { c.grupos.forEach(function (g) { g.sabores.forEach(function (x) { r.push(x); }); }); });
     return r;
   }
+  // menor preço da seção da capa (capa.colecao), para "a partir de"
   function minPrice() {
-    var m = Infinity;
-    allSabores().forEach(function (x) { sizes().forEach(function (s) { if (!isOut(x, s) && x.preco[s] < m) m = x.preco[s]; }); });
-    if (m === Infinity) allSabores().forEach(function (x) { sizes().forEach(function (s) { if (x.preco[s] < m) m = x.preco[s]; }); });
-    return m;
+    var lista = secoes().filter(function (c) { return !D.capa.colecao || c.id === D.capa.colecao; });
+    var m = Infinity, mAll = Infinity;
+    lista.forEach(function (c) { c.grupos.forEach(function (g) { g.sabores.forEach(function (x) {
+      rowsOf(x).forEach(function (r) {
+        if (typeof r.price !== "number") return;
+        if (r.price < mAll) mAll = r.price;
+        if (!isOut(x, r.key) && r.price < m) m = r.price;
+      });
+    }); }); });
+    return m === Infinity ? mAll : m;
   }
 
   var ICONS = {
@@ -85,16 +97,27 @@
     }).join("") + "</div></nav>";
   }
 
-  function row(sabor, s) {
-    if (isOut(sabor, s)) {
-      return '<div class="row off"><span class="sz">' + s + '</span><span class="pr">' + brlHtml(sabor.preco[s]) +
-        '</span><span class="soldout">Esgotado</span></div>';
-    }
-    return '<div class="row"><span class="sz">' + s + '</span><span class="pr">' + brlHtml(sabor.preco[s]) + "</span>" +
-      '<div class="step" data-id="' + esc(sabor.id) + '" data-size="' + s + '">' +
-      '<button type="button" class="b minus" aria-label="Tirar um ' + s + " de " + esc(sabor.nome) + '" disabled>&minus;</button>' +
+  function row(sabor, r) {
+    var out = isOut(sabor, r.key);
+    var nome = esc(sabor.nome) + (r.label ? " (" + esc(r.label) + ")" : r.badge ? " (" + esc(r.badge) + ")" : "");
+    // com tamanho P/M: bolinha + preço; com sabor/unidade: nome do sabor (se tiver) e preço
+    var esq = r.badge
+      ? '<span class="sz">' + esc(r.badge) + '</span><span class="pr">' + brlHtml(r.price) + "</span>"
+      : '<span class="vl">' + (r.label ? '<span class="lbl">' + esc(r.label) + "</span>" : "") + '<span class="pr">' + brlHtml(r.price) + "</span></span>";
+    var cls = "row" + (r.badge ? "" : " var") + (out ? " off" : "");
+    if (out) return '<div class="' + cls + '">' + esq + '<span class="soldout">Esgotado</span></div>';
+    return '<div class="' + cls + '">' + esq +
+      '<div class="step" data-id="' + esc(sabor.id) + '" data-size="' + esc(r.key) + '">' +
+      '<button type="button" class="b minus" aria-label="Tirar um ' + nome + '" disabled>&minus;</button>' +
       '<output class="q" aria-live="polite">0</output>' +
-      '<button type="button" class="b plus" aria-label="Adicionar um ' + s + " de " + esc(sabor.nome) + '">+</button></div></div>';
+      '<button type="button" class="b plus" aria-label="Adicionar um ' + nome + '">+</button></div></div>';
+  }
+
+  // item sem preço definido: leva o cliente a perguntar o valor no WhatsApp
+  function consulta(sabor) {
+    var msg = "Olá, " + D.marca.nome + "! Qual o valor do " + sabor.nome + "?";
+    return '<div class="row consult"><span class="vl"><span class="lbl">Valor sob consulta</span></span>' +
+      '<a class="ask" href="https://wa.me/' + D.contato.whatsapp + "?text=" + encodeURIComponent(msg) + '" target="_blank" rel="noopener">Perguntar</a></div>';
   }
 
   function card(sabor, wide) {
@@ -109,17 +132,21 @@
     }
     var tag = sabor.destaque ? '<span class="tag">' + esc(sabor.destaque) + "</span>" : "";
     var badge = out ? '<span class="out-badge">Esgotado</span>' : "";
-    var rows = sizes().map(function (s) { return row(sabor, s); }).join("");
+    var linhas = rowsOf(sabor);
+    var rows = sabor.consultar || !linhas.length ? consulta(sabor) : linhas.map(function (r) { return row(sabor, r); }).join("");
     return '<article class="card' + (wide ? " wide" : "") + (out ? " out" : "") + '">' +
       '<div class="media">' + media + tag + badge + "</div>" +
-      '<div class="body"><h3>' + esc(sabor.nome) + '</h3><p class="desc">' + esc(sabor.descricao) + "</p>" + rows + "</div></article>";
+      '<div class="body"><h3>' + esc(sabor.nome) + "</h3>" + (sabor.descricao ? '<p class="desc">' + esc(sabor.descricao) + "</p>" : "") + rows + "</div></article>";
   }
 
   function grupo(c, g) {
     var single = g.sabores.length === 1;
     var id = "h-" + esc(c.id) + "-" + esc(g.id);
-    return '<div class="grupo" role="group" aria-labelledby="' + id + '"><div class="sec-head"><h3 id="' + id + '">' + esc(g.titulo) + "</h3>" +
-      (g.subtitulo ? "<p>" + esc(g.subtitulo).replace("+", "<b>+</b>") + "</p>" : "") + "</div>" +
+    var cab = g.titulo || g.subtitulo
+      ? '<div class="sec-head">' + (g.titulo ? '<h3 id="' + id + '">' + esc(g.titulo) + "</h3>" : "") +
+        (g.subtitulo ? "<p>" + esc(g.subtitulo).replace("+", "<b>+</b>") + "</p>" : "") + "</div>"
+      : "";
+    return '<div class="grupo"' + (g.titulo ? ' role="group" aria-labelledby="' + id + '"' : "") + ">" + cab +
       '<div class="grid' + (single ? " single" : "") + " n" + g.sabores.length + '">' + g.sabores.map(function (x) { return card(x, single); }).join("") + "</div></div>";
   }
 
@@ -161,13 +188,16 @@
   function render() {
     var lines = [], items = 0, sub = 0;
     allSabores().forEach(function (x) {
-      sizes().forEach(function (s) {
-        var q = cart[key(x.id, s)] || 0;
-        if (!q || isOut(x, s)) return;
-        var price = x.preco[s] * q;
-        items += q; sub += price;
-        lines.push("\u2022 " + q + "x " + (x.nomePedido || x.nome) + " (" + s + ") \u2013 " + brl(price));
+      var pediu = false;
+      rowsOf(x).forEach(function (r) {
+        var q = cart[key(x.id, r.key)] || 0;
+        if (!q || isOut(x, r.key) || typeof r.price !== "number") return;
+        var price = r.price * q;
+        items += q; sub += price; pediu = true;
+        var det = r.badge || r.label;
+        lines.push("\u2022 " + q + "x " + (x.nomePedido || x.nome) + (det ? " (" + det + ")" : "") + " \u2013 " + brl(price));
       });
+      if (pediu && x.notaPedido) lines.push("   " + x.notaPedido);
     });
     document.querySelectorAll(".step").forEach(function (el) {
       var q = cart[key(el.dataset.id, el.dataset.size)] || 0;

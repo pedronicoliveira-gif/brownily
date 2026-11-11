@@ -70,7 +70,7 @@ img { display: block; max-width: 100%; }
 
 /* SEÇÕES */
 section.block { padding-block: 36px 8px; }
-section.colecao { padding-block: 30px 6px; }
+section.colecao { padding-block: 30px 6px; scroll-margin-top: 56px; }
 .col-head { background: linear-gradient(120deg, var(--purple) 0%, var(--purple-ink) 100%); color: #fff; border-radius: var(--r); padding: 16px 20px; margin-bottom: 8px; }
 .col-head h2 { font-size: clamp(24px, 5vw, 32px); }
 .col-head p { margin: 4px 0 0; color: var(--on-dark-muted); }
@@ -103,6 +103,13 @@ section.colecao { padding-block: 30px 6px; }
 .row { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
 .sz { width: 30px; height: 30px; border-radius: 50%; background: var(--lilac-soft); color: var(--purple-ink); display: grid; place-items: center; font-weight: 900; font-size: 14px; }
 .pr { font-family: var(--f-display); font-size: 22px; color: var(--choc); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.row.var { grid-template-columns: minmax(0, 1fr) auto; }
+.vl { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.lbl { font-weight: 800; font-size: 14px; color: var(--choc); }
+.row.consult { grid-template-columns: minmax(0, 1fr) auto; }
+.row.consult .lbl { color: var(--muted); font-weight: 700; }
+.ask { background: var(--lilac); color: var(--purple-ink); text-decoration: none; font-weight: 900; font-size: 13px; border-radius: 999px; padding: 9px 16px; white-space: nowrap; }
+.row.off .lbl { color: #9b8f94; }
 .step { display: flex; align-items: center; gap: 4px; background: var(--lilac-soft); border-radius: 999px; padding: 3px; }
 .b { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--purple); color: #fff; font-size: 20px; font-weight: 900; line-height: 1; cursor: pointer; font-family: var(--f-body); padding: 0; }
 .b.minus { background: #fff; color: var(--purple); }
@@ -196,6 +203,9 @@ footer p { margin: 12px 0 0; font-weight: 700; letter-spacing: .04em; }
   .body h3 { font-size: 18px; line-height: 1.1; }
   .desc { font-size: 13px; line-height: 1.3; margin: 0 0 3px; }
   .row { grid-template-columns: 24px minmax(0, 1fr) auto; gap: 6px; padding-top: 6px; }
+  .row.var, .row.consult { grid-template-columns: minmax(0, 1fr) auto; }
+  .lbl { font-size: 13px; }
+  .ask { font-size: 12px; padding: 7px 12px; }
   .sz { width: 24px; height: 24px; font-size: 12px; }
   .pr { font-size: 17px; }
   .step { gap: 2px; padding: 2px; }
