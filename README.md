@@ -47,6 +47,7 @@ O cardápio é dividido em **seções**, cada uma separada no site e nas imagens
 
 - `especial`: os especiais da época. Hoje é o "Especial de fim de ano". Para trocar o nome (ex.: Páscoa), mude o `titulo`; para tirar do ar, `ativa: false`.
 - `cardapio`: o cardápio de sempre. Fica escondido enquanto não tiver itens; quando tiver, aparece sozinho, separado do especial, com abas no topo do site.
+- `sobremesas`: as sobremesas, em aba própria. Peça ao Claude para criar outras abas quando precisar (ex.: Páscoa).
 
 Para mover um produto de uma seção para outra, peça ao Claude.
 

@@ -93,7 +93,7 @@
   function tabs(lista) {
     if (lista.length < 2) return "";
     return '<nav class="tabs" aria-label="Seções do cardápio"><div class="wrap">' + lista.map(function (c) {
-      return '<a href="#col-' + esc(c.id) + '">' + esc(c.titulo) + "</a>";
+      return '<a href="#col-' + esc(c.id) + '">' + esc(c.aba || c.titulo) + "</a>";
     }).join("") + "</div></nav>";
   }
 

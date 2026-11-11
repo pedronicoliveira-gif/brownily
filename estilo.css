@@ -66,7 +66,7 @@ img { display: block; max-width: 100%; }
 /* ABAS (só aparecem quando há mais de uma seção) */
 .tabs { position: sticky; top: 0; z-index: 9; background: var(--paper); border-bottom: 1px solid var(--line); }
 .tabs .wrap { display: flex; gap: 8px; overflow-x: auto; padding-block: 10px; scrollbar-width: none; }
-.tabs a { flex: none; text-decoration: none; font-weight: 900; font-size: 14px; color: var(--purple-ink); background: var(--lilac-soft); border-radius: 999px; padding: 8px 16px; }
+.tabs a { flex: none; text-align: center; text-decoration: none; font-weight: 900; font-size: 14px; color: var(--purple-ink); background: var(--lilac-soft); border-radius: 999px; padding: 8px 16px; }
 
 /* SEÇÕES */
 section.block { padding-block: 36px 8px; }
@@ -188,6 +188,8 @@ footer p { margin: 12px 0 0; font-weight: 700; letter-spacing: .04em; }
   .sizes .lbl { font-size: 11px; }
   .size { font-size: 14px; }
 
+  .tabs .wrap { gap: 6px; }
+  .tabs a { flex: 1 0 auto; font-size: 13px; padding: 8px 12px; }
   section.block { padding-block: 24px 4px; }
   section.colecao { padding-block: 20px 4px; }
   .col-head { padding: 12px 16px; border-radius: 16px; }

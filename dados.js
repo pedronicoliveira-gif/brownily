@@ -61,6 +61,8 @@ const DADOS = {
                      Para trocar o nome (ex.: Páscoa), mude o "titulo".
                      Para tirar do ar: ativa: false.
        "cardapio"  → o cardápio de sempre (separado do especial, com abas no topo).
+       "sobremesas"→ as sobremesas, também em aba própria.
+     Para criar outra aba, é só pedir (ex.: "cria uma aba de Páscoa").
      Cada item tem preço de um destes jeitos:
        preco: { P: 30, M: 60 }                  → tamanhos P e M
        linhas: [{ id, rotulo, preco }, ...]     → sabores ou unidade única (rotulo: "" = sem nome)
@@ -78,6 +80,7 @@ const DADOS = {
    id: "especial",
    ativa: true,
    titulo: "Especial de fim de ano",
+   aba: "Fim de ano",            // nome curto que aparece na aba do topo (opcional)
    subtitulo: "",
    grupos: [
     {
@@ -194,49 +197,6 @@ const DADOS = {
       ],
     },
     {
-      id: "sobremesa",
-      titulo: "Sobremesa",
-      subtitulo: "",
-      sabores: [
-        {
-          id: "sobremesa-maracuja",
-          nome: "Maracujá trufado",
-          nomePedido: "Sobremesa – Maracujá trufado",
-          descricao: "Brigadeiro de chocolate, pedaços de brownie e finalizados com brigadeiro de maracujá.",
-          foto: "fotos/sobremesa.jpg",
-          fotoDescricao: "Sobremesa de maracujá trufado em pote com laço vermelho",
-          destaque: null,
-          consultar: true,                                                        // CONFIRMAR: falta o preço. Quando tiver, troque por: linhas: [{ id: "un", rotulo: "", preco: 0 }]
-          linhas: [],
-          esgotado: [],
-        },
-        {
-          id: "sobremesa-dois-amores",
-          nome: "Dois amores",
-          nomePedido: "Sobremesa – Dois amores",
-          descricao: "Brigadeiro de chocolate, pedaços de brownie e finalizados com brigadeiro de Ninho.",
-          foto: null,                                                             // CONFIRMAR (sem foto ainda)
-          cartao: "leite",
-          destaque: null,
-          consultar: true,                                                        // CONFIRMAR: falta o preço
-          linhas: [],
-          esgotado: [],
-        },
-        {
-          id: "sobremesa-ninho-nutella",
-          nome: "Ninho com Nutella",
-          nomePedido: "Sobremesa – Ninho com Nutella",
-          descricao: "Brigadeiro de Ninho com Nutella com pedaços de brownie.",
-          foto: null,                                                             // CONFIRMAR (sem foto ainda)
-          cartao: "doce",
-          destaque: null,
-          consultar: true,                                                        // CONFIRMAR: falta o preço
-          linhas: [],
-          esgotado: [],
-        },
-      ],
-    },
-    {
       id: "mais",
       titulo: "",
       subtitulo: "",
@@ -285,6 +245,57 @@ const DADOS = {
           fotoDescricao: "Caixa com quatro brownies de sabores variados",
           destaque: null,
           linhas: [{ id: "un", rotulo: "", preco: 34.90 }],
+          esgotado: [],
+        },
+      ],
+    },
+   ],
+  },
+  {
+   id: "sobremesas",
+   ativa: true,
+   titulo: "Sobremesas",
+   subtitulo: "",
+   grupos: [
+    {
+      id: "sobremesa",
+      titulo: "",
+      subtitulo: "",
+      sabores: [
+        {
+          id: "sobremesa-maracuja",
+          nome: "Maracujá trufado",
+          nomePedido: "Sobremesa – Maracujá trufado",
+          descricao: "Brigadeiro de chocolate, pedaços de brownie e finalizados com brigadeiro de maracujá.",
+          foto: "fotos/sobremesa.jpg",
+          fotoDescricao: "Sobremesa de maracujá trufado em pote com laço vermelho",
+          destaque: null,
+          consultar: true,                                                        // CONFIRMAR: falta o preço. Quando tiver, troque por: linhas: [{ id: "un", rotulo: "", preco: 0 }]
+          linhas: [],
+          esgotado: [],
+        },
+        {
+          id: "sobremesa-dois-amores",
+          nome: "Dois amores",
+          nomePedido: "Sobremesa – Dois amores",
+          descricao: "Brigadeiro de chocolate, pedaços de brownie e finalizados com brigadeiro de Ninho.",
+          foto: null,                                                             // CONFIRMAR (sem foto ainda)
+          cartao: "leite",
+          destaque: null,
+          consultar: true,                                                        // CONFIRMAR: falta o preço
+          linhas: [],
+          esgotado: [],
+        },
+        {
+          id: "sobremesa-ninho-nutella",
+          nome: "Ninho com Nutella",
+          nomePedido: "Sobremesa – Ninho com Nutella",
+          descricao: "Brigadeiro de Ninho com Nutella com pedaços de brownie.",
+          foto: null,                                                             // CONFIRMAR (sem foto ainda)
+          cartao: "doce",
+          destaque: null,
+          consultar: true,                                                        // CONFIRMAR: falta o preço
+          linhas: [],
           esgotado: [],
         },
       ],
