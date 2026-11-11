@@ -4,6 +4,9 @@
   var D = DADOS;
   var FEE = D.entrega.taxa;
   var cart = {};
+  // versão dos arquivos (vem do ?v= deste script): garante que o navegador pegue sempre a versão nova
+  var V = (function () { var s = document.currentScript, m = s && /[?&]v=(\w+)/.exec(s.src); return m ? m[1] : ""; })();
+  function ver(p) { return V ? p + "?v=" + V : p; }
 
   /* ---------- utilitários ---------- */
   function esc(s) {
@@ -51,7 +54,7 @@
 
   /* ---------- montagem ---------- */
   function marcaHtml(cls) {
-    if (D.marca.logo) return '<img class="logo ' + cls + '" src="' + esc(D.marca.logo) + '" alt="' + esc(D.marca.nome) + '" width="1000" height="378">';
+    if (D.marca.logo) return '<img class="logo ' + cls + '" src="' + esc(ver(D.marca.logo)) + '" alt="' + esc(D.marca.nome) + '" width="1000" height="378">';
     var n = D.marca.nome.toLowerCase();
     return '<span class="wordmark ' + cls + '">' + esc(n.slice(0, 4)) + "<b>" + esc(n.slice(4)) + "</b></span>";
   }
@@ -63,7 +66,7 @@
       "<h1>" + esc(c.titulo) + " <span>" + esc(c.destaque) + "</span></h1>" +
       '<p class="lede">' + esc(c.frase) + "</p>" +
       '<p class="from">a partir de <b>' + brlHtml(minPrice()) + "</b></p></div>" +
-      '<div class="hero-photo"><img src="' + esc(c.foto) + '" alt="' + esc(c.fotoDescricao) + '" width="720" height="900" loading="lazy" decoding="async">' +
+      '<div class="hero-photo"><img src="' + esc(ver(c.foto)) + '" alt="' + esc(c.fotoDescricao) + '" width="720" height="900" loading="lazy" decoding="async">' +
       '<div class="stamp">a partir de<strong>' + brlHtml(minPrice()) + "</strong></div></div></div></header>";
   }
 
@@ -99,8 +102,8 @@
     var media;
     if (sabor.foto) {
       var alt = sabor.fotoDescricao || sabor.nome;
-      media = '<button type="button" class="zoom" data-src="' + esc(sabor.foto) + '" data-alt="' + esc(alt) + '" aria-label="Ver foto de ' + esc(sabor.nome) + ' maior">' +
-        '<img src="' + esc(mini(sabor.foto)) + '" srcset="' + esc(mini(sabor.foto)) + ' 260w, ' + esc(sabor.foto) + ' 720w" sizes="(max-width: 719px) 108px, 340px" alt="' + esc(alt) + '" width="260" height="260" loading="lazy" decoding="async"></button>';
+      media = '<button type="button" class="zoom" data-src="' + esc(ver(sabor.foto)) + '" data-alt="' + esc(alt) + '" aria-label="Ver foto de ' + esc(sabor.nome) + ' maior">' +
+        '<img src="' + esc(ver(mini(sabor.foto))) + '" srcset="' + esc(ver(mini(sabor.foto))) + ' 260w, ' + esc(ver(sabor.foto)) + ' 720w" sizes="(max-width: 719px) 108px, 340px" alt="' + esc(alt) + '" width="260" height="260" loading="lazy" decoding="async"></button>';
     } else {
       media = '<div class="tile tile-' + esc(sabor.cartao || "leite") + '" aria-hidden="true"><span>' + esc(sabor.nome) + "</span></div>";
     }

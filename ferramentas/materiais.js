@@ -215,8 +215,21 @@ function atualizarIndex() {
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <!--/COMPARTILHAR-->`;
-  const html = fs.readFileSync(arq, "utf8").replace(/<!--COMPARTILHAR-->[\s\S]*?<!--\/COMPARTILHAR-->/, bloco);
+  const versao = versaoDosArquivos();
+  const html = fs.readFileSync(arq, "utf8")
+    .replace(/<!--COMPARTILHAR-->[\s\S]*?<!--\/COMPARTILHAR-->/, bloco)
+    // ?v=... faz o navegador baixar de novo sempre que algo muda (evita ver a versão antiga)
+    .replace(/(href="estilo\.css|src="dados\.js|src="app\.js)(\?v=\w+)?"/g, `$1?v=${versao}"`);
   fs.writeFileSync(arq, html);
+}
+
+// resumo (hash) dos arquivos que o site usa: muda quando qualquer um deles muda
+function versaoDosArquivos() {
+  const h = require("crypto").createHash("md5");
+  const arqs = ["dados.js", "app.js", "estilo.css", D.marca.logo || "logo.png"];
+  const andar = d => fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap(e => e.isDirectory() ? andar(path.join(d, e.name)) : [path.join(d, e.name)]) : [];
+  [...arqs.map(a => path.join(RAIZ, a)), ...andar(path.join(RAIZ, "fotos")).sort()].forEach(f => { if (fs.existsSync(f)) h.update(fs.readFileSync(f)); });
+  return h.digest("hex").slice(0, 10);
 }
 
 async function gerarMateriais() {
