@@ -194,6 +194,49 @@ const DADOS = {
       ],
     },
     {
+      id: "sobremesa",
+      titulo: "Sobremesa",
+      subtitulo: "",
+      sabores: [
+        {
+          id: "sobremesa-maracuja",
+          nome: "Maracujá trufado",
+          nomePedido: "Sobremesa – Maracujá trufado",
+          descricao: "Brigadeiro de chocolate, pedaços de brownie e finalizados com brigadeiro de maracujá.",
+          foto: "fotos/sobremesa.jpg",
+          fotoDescricao: "Sobremesa de maracujá trufado em pote com laço vermelho",
+          destaque: null,
+          consultar: true,                                                        // CONFIRMAR: falta o preço. Quando tiver, troque por: linhas: [{ id: "un", rotulo: "", preco: 0 }]
+          linhas: [],
+          esgotado: [],
+        },
+        {
+          id: "sobremesa-dois-amores",
+          nome: "Dois amores",
+          nomePedido: "Sobremesa – Dois amores",
+          descricao: "Brigadeiro de chocolate, pedaços de brownie e finalizados com brigadeiro de Ninho.",
+          foto: null,                                                             // CONFIRMAR (sem foto ainda)
+          cartao: "leite",
+          destaque: null,
+          consultar: true,                                                        // CONFIRMAR: falta o preço
+          linhas: [],
+          esgotado: [],
+        },
+        {
+          id: "sobremesa-ninho-nutella",
+          nome: "Ninho com Nutella",
+          nomePedido: "Sobremesa – Ninho com Nutella",
+          descricao: "Brigadeiro de Ninho com Nutella com pedaços de brownie.",
+          foto: null,                                                             // CONFIRMAR (sem foto ainda)
+          cartao: "doce",
+          destaque: null,
+          consultar: true,                                                        // CONFIRMAR: falta o preço
+          linhas: [],
+          esgotado: [],
+        },
+      ],
+    },
+    {
       id: "mais",
       titulo: "",
       subtitulo: "",
@@ -205,8 +248,7 @@ const DADOS = {
           foto: "fotos/bombom.jpg",
           fotoDescricao: "Bombom brownie cortado ao meio, com brigadeiro e morango",
           destaque: null,
-          consultar: true,                                                        // CONFIRMAR: falta o preço. Quando tiver, troque por: linhas: [{ id: "un", rotulo: "", preco: 0 }]
-          linhas: [],
+          linhas: [{ id: "un", rotulo: "", preco: 18 }],
           esgotado: [],
         },
         {

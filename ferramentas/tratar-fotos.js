@@ -16,6 +16,7 @@ const FOTOS = [
   { de: "bites.jpg",           para: "bites.jpg",               foco: 0.51 },
   { de: "individual.jpg",      para: "individual.jpg",          foco: 0.54 },
   { de: "quarteto.jpg",        para: "quarteto.jpg",            foco: 0.44 },
+  { de: "sobremesa.jpg",       para: "sobremesa.jpg",           foco: 0.6 },
 ];
 
 (async () => {
